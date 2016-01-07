@@ -32,13 +32,13 @@ object Aggregation {
         x => {
           val itemset = x._2
           if (priorityQueue.size < topK) {
-            priorityQueue.add(itemset)
+            priorityQueue += itemset
           }
           else {
             val topQueue = priorityQueue.head
             if (topQueue.getSupport() < itemset.getSupport()) {
               priorityQueue.dequeue()
-              priorityQueue.add(itemset)
+              priorityQueue += itemset
             }
           }
         }

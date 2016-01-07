@@ -2,23 +2,20 @@
 
 package pfp
 
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 
 import org.apache.flink.api.scala._
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.api.scala.DataSet
 import fpgrowth.Itemset
-import org.apache.flink.api.common.functions.MapFunction
 import fpgrowth.Item
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 
 object PFPGrowthTest {
-  
+
   def main(args: Array[String]) {
-    
+
     //Global variables for Flink and parameter parser
     val parameter = ParameterTool.fromArgs(args)
     val env = ExecutionEnvironment.getExecutionEnvironment
@@ -32,7 +29,7 @@ object PFPGrowthTest {
     
     //Init PFPGrowth algorithm
     
-    var pfp = new PFPGrowths(env, topK, minSupport)
+    var pfp = new PFPGrowth(env, topK, minSupport)
 
     //Read dataset
     val data: DataSet[Itemset] = env.readTextFile(input)
@@ -42,7 +39,7 @@ object PFPGrowthTest {
           val items = line.split(itemDelimiter)
 
           if (items.length > 0) {
-            items.map { x =>
+            items.foreach { x =>
               itemset.addItem(new Item(x, 0))
             }
             out.collect(itemset)
@@ -53,7 +50,7 @@ object PFPGrowthTest {
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
     
-    frequentItemsets.print()
+    //frequentItemsets.print()
     
     //TODO: IF HAVE TIME extract association rule
   }
