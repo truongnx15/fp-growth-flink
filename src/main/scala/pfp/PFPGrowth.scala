@@ -1,6 +1,9 @@
 
 package pfp
 
+import org.apache.flink.api.common.operators.Order
+import org.apache.hadoop.util.hash.Hash
+
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
@@ -12,6 +15,8 @@ import org.apache.flink.util.Collector
 
 import fpgrowth.Item
 import fpgrowth.Itemset
+
+import scala.collection.mutable
 
 /**
  * Class to run Parallel FPGrowoth algorithm in flink
@@ -26,10 +31,32 @@ class PFPGrowths(env: ExecutionEnvironment, var topK: Int, var minSupport: Doubl
   def run(data: DataSet[Itemset]): DataSet[Item] = {
     var frequentItemsets: Array[Itemset] = Array()
     
-    var fList = data
-      .flatMap(ParalellCounting.ParalellCountingFlatMap)
-      .reduceGroup(ParalellCounting.ParalellCountingGroupReduce)
-    
-    return fList
+    //STEP 2: parallel counting step
+    var unsortedList = data
+      .flatMap(ParallelCounting.ParallelCountingFlatMap)
+      .groupBy(0)
+      .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
+      .collect()
+
+
+
+    var FList = unsortedList.sortWith(_ > _)
+
+    //STEP 3: Grouping items step
+    var numPartition = env.getParallelism
+
+    //glist map between item and
+    var gList = mutable.HashMap.empty[Item, Long]
+    FList.map { x => gList.add(new Item(x.name, x.frequency), x.hashCode % numPartition)}
+
+    //STEP 4: Parallel FPGrowth
+
+
+
+
+    //STEP 5:
+
+
+    return sortedItems
   }
 }
