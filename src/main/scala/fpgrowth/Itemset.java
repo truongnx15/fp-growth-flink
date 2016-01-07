@@ -37,6 +37,14 @@ public class Itemset {
 	public void setSupport(int support) {
 		this.support = support;
 	}
+
+	public int compareTo(Itemset o) {
+		return o.support - this.support;
+	}
+
+	public Itemset clone() throws CloneNotSupportedException {
+		return (Itemset)super.clone();
+	}
 	
 	public void addItem(Item item) {
 		items.add(item);

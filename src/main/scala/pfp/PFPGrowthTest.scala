@@ -33,16 +33,16 @@ object PFPGrowthTest {
     //Init PFPGrowth algorithm
     
     var pfp = new PFPGrowths(env, topK, minSupport)
-    
+
     //Read dataset
-    var data: DataSet[Itemset] = env.readTextFile(input)
-      .flatMap(new FlatMapFunction[String , Itemset] {
-        override def flatMap(line: String , out: Collector[Itemset]): Unit = {
+    val data: DataSet[Itemset] = env.readTextFile(input)
+      .flatMap(new FlatMapFunction[String, Itemset] {
+        override def flatMap(line: String, out: Collector[Itemset]): Unit = {
           var itemset: Itemset = new Itemset()
-          var items = line.split(itemDelimiter)
-          
+          val items = line.split(itemDelimiter)
+
           if (items.length > 0) {
-            items.map { x =>  
+            items.map { x =>
               itemset.addItem(new Item(x, 0))
             }
             out.collect(itemset)
@@ -51,7 +51,7 @@ object PFPGrowthTest {
       })
       
     //Run the PFPGrowth and get list of frequent itemsets
-    var frequentItemsets = pfp.run(data) 
+    val frequentItemsets = pfp.run(data)
     
     frequentItemsets.print()
     

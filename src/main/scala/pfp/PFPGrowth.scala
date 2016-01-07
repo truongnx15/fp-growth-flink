@@ -28,35 +28,35 @@ import scala.collection.mutable
 
 class PFPGrowths(env: ExecutionEnvironment, var topK: Int, var minSupport: Double)  {
   
-  def run(data: DataSet[Itemset]): DataSet[Item] = {
-    var frequentItemsets: Array[Itemset] = Array()
-    
+  def run(data: DataSet[Itemset]): Array[Itemset] = {
+
     //STEP 2: parallel counting step
-    var unsortedList = data
+    val unsortedList = data
       .flatMap(ParallelCounting.ParallelCountingFlatMap)
       .groupBy(0)
       .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
       .collect()
 
-
-
-    var FList = unsortedList.sortWith(_ > _)
+    val FList = unsortedList.sortWith(_ > _)
 
     //STEP 3: Grouping items step
-    var numPartition = env.getParallelism
+    val numPartition = env.getParallelism
 
     //glist map between item and
-    var gList = mutable.HashMap.empty[Item, Long]
+    val gList = mutable.HashMap.empty[Item, Long]
     FList.map { x => gList.add(new Item(x.name, x.frequency), x.hashCode % numPartition)}
 
-    //STEP 4: Parallel FPGrowth
-
-
-
+    //STEP 4: Parallel FPGrowth: default null key is not necessary
+    val step4output: DataSet[Itemset] = null
 
     //STEP 5:
+    val frequentItemsets: Array[Itemset] = step4output
+      .flatMap(Aggregation.AggregationFlatMap)
+      .groupBy(0)
+      .reduceGroup(new Aggregation.AggregationGroupReduce(topK))
+      .collect()
+      .toArray[Itemset]
 
-
-    return sortedItems
+    return frequentItemsets
   }
 }
