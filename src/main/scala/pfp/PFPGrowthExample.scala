@@ -12,7 +12,7 @@ import fpgrowth.Item
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 
-object PFPGrowthTest {
+object PFPGrowthExample {
 
   def main(args: Array[String]) {
 
@@ -32,20 +32,7 @@ object PFPGrowthTest {
     var pfp = new PFPGrowth(env, topK, minSupport)
 
     //Read dataset
-    val data: DataSet[Itemset] = env.readTextFile(input)
-      .flatMap(new FlatMapFunction[String, Itemset] {
-        override def flatMap(line: String, out: Collector[Itemset]): Unit = {
-          var itemset: Itemset = new Itemset()
-          val items = line.split(itemDelimiter)
-
-          if (items.length > 0) {
-            items.foreach { x =>
-              itemset.addItem(new Item(x, 0))
-            }
-            out.collect(itemset)
-          }
-        }
-      })
+    val data = readInput(env, input, itemDelimiter)
       
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)

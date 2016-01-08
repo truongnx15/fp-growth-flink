@@ -31,6 +31,28 @@
             <version>2.10.4</version>
             <scope>compile</scope>
         </dependency>
+
+		<dependency>
+			 <groupId>junit</groupId>
+			 <artifactId>junit</artifactId>
+			 <version>4.8.1</version>
+			 <scope>test</scope>
+		</dependency>
+
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.10</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.10</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

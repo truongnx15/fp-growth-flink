@@ -31,7 +31,7 @@ object Aggregation {
       iterable.foreach{
         x => {
           val itemset = x._2
-          if (priorityQueue.size < topK) {
+          if (priorityQueue.size < topK || topK <= 0) {
             priorityQueue += itemset
           }
           else {

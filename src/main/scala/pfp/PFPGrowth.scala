@@ -30,7 +30,6 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
       .collect()
 
     val FList = unsortedList.sortWith(_ > _)
-
     //STEP 3: Grouping items step
     val numPartition = env.getParallelism
 
