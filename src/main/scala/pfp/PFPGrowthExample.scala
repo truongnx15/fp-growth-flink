@@ -12,9 +12,19 @@ import fpgrowth.Item
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 
+import scala.collection.mutable.ListBuffer
+
 object PFPGrowthExample {
 
   def main(args: Array[String]) {
+
+    var a = new ListBuffer[Int]
+    a += 1
+    a += 2
+    println("LIST: " + a)
+    var b = a.dropRight(1)
+    println("LIST: " + a)
+    println("LIST: " + b)
 
     //Global variables for Flink and parameter parser
     val parameter = ParameterTool.fromArgs(args)
@@ -32,7 +42,7 @@ object PFPGrowthExample {
     var pfp = new PFPGrowth(env, topK, minSupport)
 
     //Read dataset
-    val data = readInput(env, input, itemDelimiter)
+    val data = IOHelper.readInput(env, input, itemDelimiter)
       
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)

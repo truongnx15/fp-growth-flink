@@ -4,6 +4,7 @@ import fpgrowth.{Item, Itemset}
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.scala.{DataSet, ExecutionEnvironment}
 import org.apache.flink.util.Collector
+import org.apache.flink.api.scala._
 
 object IOHelper {
   def readInput(env: ExecutionEnvironment, input: String, itemDelimiter: String): DataSet[Itemset] = {

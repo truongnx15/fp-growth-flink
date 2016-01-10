@@ -18,7 +18,7 @@ object Aggregation {
     */
   def AggregationFlatMap = new FlatMapFunction[Itemset, (Item, Itemset)] {
     override def flatMap(item: Itemset, collector: Collector[(Item, Itemset)]): Unit = {
-      val itemset = item.getItems()
+      val itemset = item.getItems
       itemset.foreach { x => collector.collect((x, item))}
     }
   }

@@ -1,17 +1,15 @@
 import java.io.PrintWriter
 
 import fpgrowth.Item
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.flink.api.scala._
 import org.apache.spark.mllib.fpm.FPGrowth
+import org.apache.spark.{SparkConf, SparkContext}
 import org.junit._
 import pfp.{IOHelper, PFPGrowth, ParallelCounting}
 
-import org.apache.flink.api.scala._
-
+import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
-
-import scala.collection.JavaConversions._
 
 class PFPGrowthTest  {
 
