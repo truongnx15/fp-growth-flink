@@ -1,13 +1,13 @@
 import java.io.PrintWriter
 
-import fpgrowth.Item
+import fpgrowth.{FPGrowth => FPGrowthLocal, Itemset, Item}
 import org.apache.flink.api.scala._
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.{SparkConf, SparkContext}
 import org.junit._
 import pfp.{IOHelper, PFPGrowth, ParallelCounting}
 
-import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
@@ -83,8 +83,6 @@ class PFPGrowthTest  {
 
     val frequentItems = allItems.filter( _.frequency >= minCount)
 
-    println("BRUTE FOCE FREQUENT ITEMS SIZE: " + frequentItems.size)
-
     val possibleTransaction: Long = 1L << frequentItems.size
 
     //Build subset of frequentItems
@@ -112,6 +110,32 @@ class PFPGrowthTest  {
     }
 
     return allFrequentSetTransaction
+  }
+
+  @Test
+  def testFPGrowthLocal(): Unit = {
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
+    val transactions = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
+    //val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
+    val minCount: Long = 3
+
+    //Build the order of items
+    val unsortedList = transactions
+      .flatMap(ParallelCounting.ParallelCountingFlatMap)
+      .groupBy(0)
+      .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
+      .collect()
+
+    val order = unsortedList.sortWith(_ > _).zipWithIndex.toMap
+
+    var inputTransactions: ListBuffer[Itemset] = new ListBuffer[Itemset]()
+    transactions.collect().flatMap(inputTransactions += _)
+
+    val sorting: Boolean = true
+    var fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting);
+
+    val frequentItemsets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
   }
 
   @Test

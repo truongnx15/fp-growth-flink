@@ -17,12 +17,13 @@ class Item(var name: String, var frequency: Long) extends Ordered[Item] {
     this.rank = frequency
   }
   
-  override def equals(o: Any): Boolean = {
-    o.isInstanceOf[Item] && this.name == o.asInstanceOf[Item].name
+  override def equals(o: Any) = o match  {
+    case o: Item => this.name == o.name
+    case _ => false
   }
   
-  override def hashCode = {
-    super.hashCode() + name.hashCode() + frequency.intValue()
+  override def hashCode: Int = {
+    return 47 * (47 + name.length.hashCode())
   }
   
   def compare(o: Item): Int = {
@@ -33,6 +34,6 @@ class Item(var name: String, var frequency: Long) extends Ordered[Item] {
   }
   
   override def toString = {
-    "[" + this.name + ", " + this.frequency + "]"
+    "[" + this.name + ", " + this.frequency + ", " + this.rank + "]"
   }
 }

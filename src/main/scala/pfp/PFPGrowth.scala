@@ -23,7 +23,7 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
   
   def run(data: DataSet[Itemset]): List[Itemset] = {
 
-       //STEP 2: parallel counting step
+   //STEP 2: parallel counting step
     val unsortedList = data
       .flatMap(ParallelCounting.ParallelCountingFlatMap)
       .groupBy(0)
