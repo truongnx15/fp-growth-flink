@@ -1,7 +1,6 @@
 package pfp
 
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.common.functions.GroupReduceFunction
@@ -11,7 +10,7 @@ import fpgrowth.Item
 import fpgrowth.Itemset
 
 //Object to make the ParallelCounting static
-object ParalellCounting {
+object ParallelCounting {
   
   /**
    * Map function for Step 2: Parallel Counting in PFP
@@ -19,23 +18,23 @@ object ParalellCounting {
    * These pairs are latter grouped to count occurrence for each distinct item
    */
   
-  def ParalellCountingFlatMap = new FlatMapFunction[Itemset, Item] {
-    override def flatMap(transaction: Itemset, out: Collector[Item]): Unit = {
+  def ParallelCountingFlatMap = new FlatMapFunction[Itemset, (Item, Long)] {
+    override def flatMap(transaction: Itemset, out: Collector[(Item, Long)]): Unit = {
       //Retrieve the list of item in a transaction
-      var itemset = transaction.getItems();
+      val itemset = transaction.getItems();
       
       //For each item in the transaction, output pair (item, occurrence[1 by default])
       itemset.map { 
         x => {
           x.frequency = 1
-          out.collect(x)
+          out.collect((x, 1))
         }
       }
     }
   }
-  
-  def ParalellCountingGroupReduce = new GroupReduceFunction[Item, Item] {
-    override def reduce(items: java.lang.Iterable[Item], out: Collector[Item]): Unit = {
+
+  def ParallelCountingGroupReduce = new GroupReduceFunction[(Item, Long), Item] {
+    override def reduce(items: java.lang.Iterable[(Item, Long)], out: Collector[Item]): Unit = {
       
       //Temporary variable before returning the final result
       var sum: Long = 0
@@ -44,8 +43,8 @@ object ParalellCounting {
       //Loop through the group and sum number of occurrences for the item
       items.map { 
         x => {
-          item = x
-          sum += x.frequency
+          item = x._1
+          sum += x._2
         }
       }
       

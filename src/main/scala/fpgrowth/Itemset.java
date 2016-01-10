@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class Itemset {
+public class Itemset implements Comparable<Itemset> {
 	private List<Item> items;
 	private int support;
 	
@@ -37,6 +37,10 @@ public class Itemset {
 	public void setSupport(int support) {
 		this.support = support;
 	}
+
+	public Itemset clone() throws CloneNotSupportedException {
+		return (Itemset)super.clone();
+	}
 	
 	public void addItem(Item item) {
 		items.add(item);
@@ -49,8 +53,12 @@ public class Itemset {
 		for(int i = 0; i < items.size(); i++) {
 			string.append(items.get(i).toString());
 		}
-		string.append(")");
+		string.append("):" + support);
 		
 		return string.toString();
 	}
+
+    public int compareTo(Itemset o) {
+        return o.support - this.support;
+    }
 }
