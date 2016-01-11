@@ -22,7 +22,7 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
   
   def run(data: DataSet[Itemset]): List[Itemset] = {
 
-    //STEP 2: parallel counting step
+   //STEP 2: parallel counting step
     val unsortedList = data
       .flatMap(ParallelCounting.ParallelCountingFlatMap)
       .groupBy(0)
@@ -35,7 +35,8 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
 
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Long]
-    FList.foreach { x => gList.put(new Item(x.name, x.frequency), x.hashCode % numPartition)}
+
+    FList.foreach { x => gList.put(new Item(x.name, x.frequency, 1), x.hashCode % numPartition)}
     val broadcastGList = env.fromCollection(gList)
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary

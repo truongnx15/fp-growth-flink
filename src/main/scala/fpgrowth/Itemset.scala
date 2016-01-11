@@ -64,6 +64,6 @@ class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[It
 
   def sortItems(order: immutable.Map[Item, Int]): Unit = {
     items.foreach(item => item.rank = order(item))
-    items.sortWith( _ > _)
+    items = items.sortWith( _ < _)
   }
 }
