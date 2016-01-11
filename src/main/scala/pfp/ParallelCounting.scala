@@ -21,7 +21,7 @@ object ParallelCounting {
   def ParallelCountingFlatMap = new FlatMapFunction[Itemset, (Item, Long)] {
     override def flatMap(transaction: Itemset, out: Collector[(Item, Long)]): Unit = {
       //Retrieve the list of item in a transaction
-      val itemset = transaction.getItems();
+      val itemset = transaction.getItems()
       
       //For each item in the transaction, output pair (item, occurrence[1 by default])
       itemset.map { 
