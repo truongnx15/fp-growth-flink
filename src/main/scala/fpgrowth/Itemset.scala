@@ -62,8 +62,8 @@ class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[It
     return this.support compare o.support
   }
 
-  def sortItems(order: immutable.Map[Item, Int], minCount: Long): Unit = {
+  def sortItems(order: immutable.Map[Item, Int]): Unit = {
     items.foreach(item => item.rank = order(item))
-    items = items.sortWith( _ < _).filter(_.frequency >= minCount)
+    items = items.sortWith( _ < _)
   }
 }

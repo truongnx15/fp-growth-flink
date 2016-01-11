@@ -36,7 +36,7 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
 
     //glist map between item and
     val gList = mutable.HashMap.empty[Item, Long]
-    FList.foreach { x => gList.put(new Item(x.name, x.frequency), x.hashCode % numPartition)}
+    FList.foreach { x => gList.put(new Item(x.name, x.frequency, 1), x.hashCode % numPartition)}
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = null

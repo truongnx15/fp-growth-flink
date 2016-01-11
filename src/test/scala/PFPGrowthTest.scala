@@ -114,6 +114,7 @@ class PFPGrowthTest  {
 
   @Test
   def testFPGrowthLocal(): Unit = {
+
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
     val transactions = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
@@ -136,6 +137,11 @@ class PFPGrowthTest  {
     var fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting);
 
     val frequentItemsets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
+
+    //println("PRINT TREE: ")
+    //fpGrowthLocal.fptree.printTree()
+    println("FREQUENT PATTERN: " + frequentItemsets.size)
+    frequentItemsets.foreach(println(_))
   }
 
   @Test

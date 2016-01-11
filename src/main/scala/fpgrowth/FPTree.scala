@@ -34,7 +34,7 @@ class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
         if (child == null || !item.equals(child.item)) {
           //We should create new child be cause there is no
 
-          val newNode = new FPTreeNode(item, 1L, currentNode )
+          val newNode = new FPTreeNode(item, item.count, currentNode )
           //Add to the children of currentNode
           currentNode.children += (item -> newNode)
           if (currentNode.children.size > 1) {
@@ -59,7 +59,7 @@ class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
         else {
           //We should go down to the next node because we have common path
           currentNode = child
-          currentNode.frequency += 1
+          currentNode.frequency += item.count
         }
       }
     }

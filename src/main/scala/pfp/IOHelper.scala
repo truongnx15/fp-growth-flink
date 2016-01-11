@@ -17,7 +17,7 @@ object IOHelper {
 
           if (items.length > 0) {
             items.foreach { x =>
-              if (x.length() > 0) itemset.addItem(new Item(x, 0))
+              if (x.length() > 0) itemset.addItem(new Item(x, 1, 1))
             }
             out.collect(itemset)
           }
