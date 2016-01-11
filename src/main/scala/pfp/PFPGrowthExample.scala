@@ -18,14 +18,6 @@ object PFPGrowthExample {
 
   def main(args: Array[String]) {
 
-    var a = new ListBuffer[Int]
-    a += 1
-    a += 2
-    println("LIST: " + a)
-    var b = a.dropRight(1)
-    println("LIST: " + a)
-    println("LIST: " + b)
-
     //Global variables for Flink and parameter parser
     val parameter = ParameterTool.fromArgs(args)
     val env = ExecutionEnvironment.getExecutionEnvironment
@@ -39,7 +31,7 @@ object PFPGrowthExample {
     
     //Init PFPGrowth algorithm
     
-    var pfp = new PFPGrowth(env, topK, minSupport)
+    var pfp = new PFPGrowth(env, minSupport)
 
     //Read dataset
     val data = IOHelper.readInput(env, input, itemDelimiter)

@@ -19,7 +19,7 @@ import scala.collection.mutable
  * 
  */
 
-class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double)  {
+class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
   
   def run(data: DataSet[Itemset]): List[Itemset] = {
 
@@ -29,6 +29,8 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
       .groupBy(0)
       .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
       .collect()
+
+   val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
     val FList = unsortedList.sortWith(_ > _)
     //STEP 3: Grouping items step
@@ -40,21 +42,21 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
     FList.foreach { x => gList.put(new Item(x.name, x.frequency, 1), x.hashCode % numPartition)}
     val broadcastGList = env.fromCollection(gList)
 
-   /*
+
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = data
-      .map(ParallelFPGrowth.ParallelFPGrowthRichMap).withBroadcastSet(broadcastGList, "gList")
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList)).withBroadcastSet(broadcastGList, "gList")
       .groupBy(0)
-      .reduce(ParallelFPGrowth.ParallelFPGrowthRichGroupReduce).withBroadcastSet(broadcastGList, "gList")
+      .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount)).withBroadcastSet(broadcastGList, "gList")
 
     //STEP 5:
     val frequentItemsets: List[Itemset] = step4output
       .flatMap(Aggregation.AggregationFlatMap)
       .groupBy(0)
-      .reduceGroup(new Aggregation.AggregationGroupReduce(topK))
+      .reduceGroup(Aggregation.AggregationGroupReduce)
       .collect()
       .toList
-     */
+
 
     return null
   }

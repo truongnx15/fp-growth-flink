@@ -23,30 +23,13 @@ object Aggregation {
     }
   }
 
-  class AggregationGroupReduce(var topK: Int) extends GroupReduceFunction[(Item, Itemset), Itemset] {
+  def AggregationGroupReduce = new GroupReduceFunction[(Item, Itemset), Itemset] {
     override def reduce(iterable: Iterable[(Item, Itemset)], collector: Collector[Itemset]): Unit = {
-      val priorityQueue = new mutable.PriorityQueue[Itemset]()
-
-      //Select topK frequent itemset
-      iterable.foreach{
-        x => {
-          val itemset = x._2
-          if (priorityQueue.size < topK || topK <= 0) {
-            priorityQueue += itemset
-          }
-          else {
-            val topQueue = priorityQueue.head
-            if (topQueue.getSupport() < itemset.getSupport()) {
-              priorityQueue.dequeue()
-              priorityQueue += itemset
-            }
-          }
+      iterable.foreach(
+        tuple => {
+          collector.collect(tuple._2)
         }
-      }
-
-      while (!priorityQueue.isEmpty) {
-        collector.collect(priorityQueue.dequeue())
-      }
+      )
     }
   }
 }

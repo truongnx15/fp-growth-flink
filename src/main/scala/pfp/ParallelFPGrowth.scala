@@ -1,114 +1,64 @@
-package pfp
+import java.lang.Iterable
 
-import java.{lang, util}
-
-import fpgrowth.{Item, Itemset}
-import org.apache.flink.api.common.functions.{RichGroupReduceFunction, RichMapFunction}
-import org.apache.flink.configuration.Configuration
+import fpgrowth.{FPGrowth => FPGrowthLocal, Itemset, Item}
+import org.apache.flink.api.common.functions.{GroupReduceFunction, FlatMapFunction}
 import org.apache.flink.util.Collector
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable._
+import scala.collection.JavaConversions._
+import org.apache.flink.api.scala._
 
-//Object to make the ParallelFPGrowth static
+import scala.collection.immutable.HashMap
+import scala.collection.mutable.ListBuffer
+
 object ParallelFPGrowth {
+  class ParallelFPGrowthflatMap(var hashMap : HashMap[Item, Long]) extends FlatMapFunction[Itemset, (Long, Itemset)] {
 
-  /**
-    * Map function for Step 4: Generate group-dependent transactions
-    * Input: Itemset
-    * Output key: group-id
-    * Output value: generated group-dependent transactions
-    */
-  def ParallelFPGrowthRichMap = new RichMapFunction[Itemset, (Long, Itemset)] {
-    //Load G-List
-    var gList: List[(Item, Long)] = null
+    override def flatMap(itemset: Itemset, collector: Collector[(Long, Itemset)]): Unit = {
 
-    override def open(config: Configuration): Unit = {
-      gList = getRuntimeContext().getBroadcastVariable[(Item, Long)]("gList").asScala.toList
-    }
+      for(j <- (itemset.items.size - 1) to (0, -1)) {
+        var hashNum = hashMap.getOrElse(itemset.items(j), null)
+        if (hashNum != null) {
 
-    // Generate Hash Table H from G-List
-    val hTable = HashMap.empty[Item,Long]
+          hashMap = hashMap.filter(_._2 != hashNum)
+          var newItemset = new Itemset()
 
-    gList.foreach {
-      case (item, gid) => {
-        hTable += (item -> gid)
-      }
-    }
-
-    // a[] <- Split(Ti)
-
-    override def map(transaction: Itemset): (Long, Itemset) = {
-      val itemset = transaction.getItems()
-      var hashNumber: Long = 0
-      val itemset2:Itemset = null
-
-      transaction.items.foreach {
-        x => {
-          hashNumber = hTable(x)
-          if(hashNumber != null) {
-            // Delete all pairs which hash value is HashNum in H
-            //TODO
-            hTable.remove(x)
-            itemset2.addItem(x)
+          for(i <- 0 to j) {
+            newItemset.addItem(itemset.items(i))
           }
+
+          collector.collect((hashNum.toString.toLong, newItemset))
+
         }
       }
-      (hashNumber, itemset2)
     }
   }
 
-  /**
-    * Reduce function for Step 4: FP-Growth on group-dependent shards
-    * Groups all corresponding group-dependent transactions into a shard of group-dependent transactions.
-    * Involves building a local FP-tree and growth its conditional FP-trees recursively
-    * Input: key = group id, value = DBgid
-    * Output: vi+support(vi)
-    */
-  def ParallelFPGrowthRichGroupReduce = new RichGroupReduceFunction[(Long, Itemset), (Itemset,Long)] {
-    // Load G-List
-    var gList: util.List[(Item, Long)] = null
-    var nowGroup:util.List[(Item, Long)] = null
-    //var localFPTree: LocalFPTree = null
+  class ParallelFPGrowthGroupReduce(var hashMap: HashMap[Item, Long], var minCount: Long) extends GroupReduceFunction[(Long, Itemset), Itemset] {
+    override def reduce(iterable: Iterable[(Long, Itemset)], collector: Collector[Itemset]): Unit = {
 
-    override def open(config: Configuration): Unit = {
-      gList = getRuntimeContext().getBroadcastVariable[(Item, Long)]("gList")
-    }
+      var transactions = new ListBuffer[Itemset]()
+      var hashValue: Long = 0
 
-    var scalaGList = gList.asScala.toList
-    //def reduce(items: Iterable[(Long, Itemset)], out: Collector[(Itemset, Long)]): Unit = {
-    def reduce(items: Iterable[(Long, Itemset)], out: Collector[(Itemset, Long)]): Unit = {
-      items.foreach {
+      iterable.foreach(
+        tuple => {
+          hashValue = tuple._1
+          transactions += tuple._2
+        }
+      )
+
+      var nowGroup = hashMap.filter(_._2 == hashValue).map(_._1)
+
+      val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, true);
+
+      nowGroup.foreach(
         item => {
-          nowGroup.clear()
-          // clear local FPTree
-          scalaGList.foreach {
-            x => {
-              if(x._2.equals(item._1)) {
-                nowGroup.add(x)
-              }
-            }
-          }
-          // Call insert-build-fp-tree(LocalFPtree,Ti);
+          val frequentSets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null, item)
+          frequentSets.foreach(
+            itemset => {collector.collect(itemset)}
+          )
         }
-      }
-
-      nowGroup.asScala.toList.foreach {
-        y => {
-          // Define and clear a size K max heap : HP;
-          val k = 100
-          val HPlist = new ListBuffer[Itemset]
-          //TODO HPList = TopKFPGrowth(LocalFPtree,ai,HP);
-          HPlist.foreach {
-            v => {
-              out.collect(v, v.getSupport())
-            }
-          }
-        }
-      }
+      )
     }
-
-    override def reduce(iterable: lang.Iterable[(Long, Itemset)], collector: Collector[(Itemset, Long)]): Unit = ???
   }
 
 }
