@@ -1,17 +1,17 @@
 package pfp
 
-import java.util
+import java.{lang, util}
 
 import fpgrowth.{Item, Itemset}
 import org.apache.flink.api.common.functions.{RichGroupReduceFunction, RichMapFunction}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 
-import scala.collection.mutable._
 import scala.collection.JavaConverters._
+import scala.collection.mutable._
 
 //Object to make the ParallelFPGrowth static
-class ParallelFPGrowth {
+object ParallelFPGrowth {
 
   /**
     * Map function for Step 4: Generate group-dependent transactions
@@ -19,33 +19,36 @@ class ParallelFPGrowth {
     * Output key: group-id
     * Output value: generated group-dependent transactions
     */
-  def ParallelFPGrowthRichMap = new RichMapFunction[Itemset, (Item, Long)] {
+  def ParallelFPGrowthRichMap = new RichMapFunction[Itemset, (Long, Itemset)] {
     //Load G-List
-    var gList: util.List[(Item, Long)] = null
+    var gList: List[(Item, Long)] = null
 
     override def open(config: Configuration): Unit = {
-      gList = getRuntimeContext().getBroadcastVariable[(Item, Long)]("gList")
+      gList = getRuntimeContext().getBroadcastVariable[(Item, Long)]("gList").asScala.toList
     }
 
     // Generate Hash Table H from G-List
     val hTable = HashMap.empty[Item,Long]
-    var a = 0
-    for(a <- 0 to gList.size()-1) {
-      hTable.put(gList.get(a)._1, gList.get(a)._1.hashCode)
+
+    gList.foreach {
+      case (item, gid) => {
+        hTable += (item -> gid)
+      }
     }
 
     // a[] <- Split(Ti)
 
-    def map(transaction: Itemset): (Long, Itemset) = {
+    override def map(transaction: Itemset): (Long, Itemset) = {
       val itemset = transaction.getItems()
-      var hashNumber:Long = 0
+      var hashNumber: Long = 0
       val itemset2:Itemset = null
 
-      itemset.foreach {
+      transaction.items.foreach {
         x => {
-          hashNumber = hTable.get(x).hashCode()
+          hashNumber = hTable(x)
           if(hashNumber != null) {
             // Delete all pairs which hash value is HashNum in H
+            //TODO
             hTable.remove(x)
             itemset2.addItem(x)
           }
@@ -73,6 +76,7 @@ class ParallelFPGrowth {
     }
 
     var scalaGList = gList.asScala.toList
+    //def reduce(items: Iterable[(Long, Itemset)], out: Collector[(Itemset, Long)]): Unit = {
     def reduce(items: Iterable[(Long, Itemset)], out: Collector[(Itemset, Long)]): Unit = {
       items.foreach {
         item => {
@@ -103,6 +107,8 @@ class ParallelFPGrowth {
         }
       }
     }
+
+    override def reduce(iterable: lang.Iterable[(Long, Itemset)], collector: Collector[(Itemset, Long)]): Unit = ???
   }
 
 }

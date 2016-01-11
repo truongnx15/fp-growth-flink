@@ -4,9 +4,10 @@ package pfp
 import org.apache.flink.api.scala.DataSet
 import org.apache.flink.api.scala.ExecutionEnvironment
 
+import org.apache.flink.api.scala._
+
 import fpgrowth.Item
 import fpgrowth.Itemset
-import org.apache.flink.configuration.Configuration
 
 import scala.collection.mutable
 
@@ -39,12 +40,12 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
     FList.foreach { x => gList.put(new Item(x.name, x.frequency, 1), x.hashCode % numPartition)}
     val broadcastGList = env.fromCollection(gList)
 
+   /*
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = data
-      .map(new ParallelFPGrowth().ParallelFPGrowthRichMap).withBroadcastSet(broadcastGList, "gList")
+      .map(ParallelFPGrowth.ParallelFPGrowthRichMap).withBroadcastSet(broadcastGList, "gList")
       .groupBy(0)
-      .reduce(new ParallelFPGrowth().ParallelFPGrowthGroupReduce).withBroadcastSet(broadcastGList, "gList")
-      .collect()
+      .reduce(ParallelFPGrowth.ParallelFPGrowthRichGroupReduce).withBroadcastSet(broadcastGList, "gList")
 
     //STEP 5:
     val frequentItemsets: List[Itemset] = step4output
@@ -53,7 +54,8 @@ class PFPGrowth(env: ExecutionEnvironment, var topK: Int, var minSupport: Double
       .reduceGroup(new Aggregation.AggregationGroupReduce(topK))
       .collect()
       .toList
+     */
 
-    return frequentItemsets
+    return null
   }
 }

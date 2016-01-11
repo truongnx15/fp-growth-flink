@@ -14,10 +14,11 @@ import scala.util.Random
 class PFPGrowthTest  {
 
   val minSupport = List[Double](0.2, 0.3, 0.25)
-  val numItems = List[Int](10, 15, 15)
-  val numTransactions = List[Int](20, 30, 40)
+  val numItems = List[Int](10, 15, 26)
+  val numTransactions = List[Int](20, 30, 20000)
   val itemDelimiter = " "
   val transactionFile: String = "transactions.txt"
+  //val transactionFile: String = "sample_fpgrowth_local.txt"
 
   def generateTransactionFile(testNum: Int): Unit = {
     val aInt = 'a'.asInstanceOf[Int]
@@ -57,6 +58,8 @@ class PFPGrowthTest  {
     val env = ExecutionEnvironment.getExecutionEnvironment
     val transactions = IOHelper.readInput(env, transactionFile, itemDelimiter)
     val minCount: Int = math.ceil(minSupport(testNum) * transactions.count()).toInt
+
+    println("BRUTE FORCE MIN COUNT: " + minCount)
 
     var allSetTransaction: ListBuffer[Set[String]] = ListBuffer()
 
@@ -117,9 +120,9 @@ class PFPGrowthTest  {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
-    //val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
-    val minCount: Long = 3
+    val transactions = IOHelper.readInput(env, "transactions.txt", itemDelimiter)
+    val minCount: Long = math.ceil(minSupport(2) * transactions.count()).toLong
+    //val minCount: Long = 3
 
     //Build the order of items
     val unsortedList = transactions
@@ -141,7 +144,7 @@ class PFPGrowthTest  {
     //println("PRINT TREE: ")
     //fpGrowthLocal.fptree.printTree()
     println("FREQUENT PATTERN: " + frequentItemsets.size)
-    frequentItemsets.foreach(println(_))
+    //frequentItemsets.foreach(println(_))
   }
 
   @Test
@@ -154,12 +157,12 @@ class PFPGrowthTest  {
     //SPARK init
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
 
     val conf = new SparkConf().setAppName("PFPGrowth")setMaster("local[2]")
     val sc = new SparkContext(conf)
 
-    for(testNum <- 0 to 2) {
+    for(testNum <- 2 to 2) {
 
       generateTransactionFile(testNum)
 
@@ -190,6 +193,7 @@ class PFPGrowthTest  {
         }
       }
 
+      /*
       //Extract frequentSet in Flink
       var frequentSetsFlink: ListBuffer[Set[String]] = new ListBuffer()
       flinkModel.foreach {
@@ -200,6 +204,7 @@ class PFPGrowthTest  {
           frequentSetsFlink += currentFrequentSet
         }
       }
+      */
 
       if (numItems(testNum) <= 20) {
         //Run bruteforce model
@@ -216,7 +221,7 @@ class PFPGrowthTest  {
         }
 
         assert(frequentSetsSpark.toSet.sameElements(frequentSetsBruteForce.toSet))
-        assert(frequentSetsFlink.toSet.sameElements(frequentSetsBruteForce.toSet))
+       // assert(frequentSetsFlink.toSet.sameElements(frequentSetsBruteForce.toSet))
         //TODO: When flink implementation finished assert(modelFlink.count() == modelBruteForce.size)
       }
 
