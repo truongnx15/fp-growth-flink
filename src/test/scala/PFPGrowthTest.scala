@@ -13,15 +13,14 @@ import scala.util.Random
 
 class PFPGrowthTest  {
 
-  val minSupport = List[Double](0.2, 0.3, 0.25)
-  val numItems = List[Int](10, 15, 26)
-  val numTransactions = List[Int](20, 30, 20000)
+  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.1)
+  val numItems = List[Int](10, 50, 70, 100, 150)
+  val numTransactions = List[Int](20, 30, 1000, 5000, 10000)
   val itemDelimiter = " "
   val transactionFile: String = "transactions.txt"
   //val transactionFile: String = "sample_fpgrowth_local.txt"
 
   def generateTransactionFile(testNum: Int): Unit = {
-    val aInt = 'a'.asInstanceOf[Int]
     val random = Random
     val writer = new PrintWriter( transactionFile , "UTF-8")
 
@@ -30,14 +29,14 @@ class PFPGrowthTest  {
         writer.write("\n")
       }
       //Store items in the transaction
-      var items: Set[Char] = Set()
+      var items: Set[String] = Set()
 
       var tranLength: Int = random.nextInt(numItems(testNum) * 3/4) + 1
 
       while (items.size < tranLength) {
         //Generate a letter for item
         val intNextItem = random.nextInt(numItems(testNum))
-        val itemName = (aInt + intNextItem).asInstanceOf[Char]
+        val itemName = intNextItem.toString
         if (!items.contains(itemName)) {
           items += itemName
 
@@ -58,8 +57,6 @@ class PFPGrowthTest  {
     val env = ExecutionEnvironment.getExecutionEnvironment
     val transactions = IOHelper.readInput(env, transactionFile, itemDelimiter)
     val minCount: Int = math.ceil(minSupport(testNum) * transactions.count()).toInt
-
-    println("BRUTE FORCE MIN COUNT: " + minCount)
 
     var allSetTransaction: ListBuffer[Set[String]] = ListBuffer()
 
@@ -115,36 +112,38 @@ class PFPGrowthTest  {
     return allFrequentSetTransaction
   }
 
-  @Test
-  def testFPGrowthLocal(): Unit = {
+  def testFPGrowthLocal(testNum: Int): ListBuffer[Itemset] = {
 
+    //Employ flink and FPGrowth to read data
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, "transactions.txt", itemDelimiter)
-    val minCount: Long = math.ceil(minSupport(2) * transactions.count()).toLong
-    //val minCount: Long = 3
+    val transactions = IOHelper.readInput(env, transactionFile, itemDelimiter)
+    val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
 
-    //Build the order of items
-    val unsortedList = transactions
-      .flatMap(ParallelCounting.ParallelCountingFlatMap)
-      .groupBy(0)
-      .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
-      .collect()
-
-    val order = unsortedList.sortWith(_ > _).zipWithIndex.toMap
-
+    //convert DataSet to ListBuffer
     var inputTransactions: ListBuffer[Itemset] = new ListBuffer[Itemset]()
     transactions.collect().flatMap(inputTransactions += _)
 
+    //Init and run FPGrowth
     val sorting: Boolean = true
-    var fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting);
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting);
 
-    val frequentItemsets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
+    return fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
+  }
 
-    //println("PRINT TREE: ")
-    //fpGrowthLocal.fptree.printTree()
-    println("FREQUENT PATTERN: " + frequentItemsets.size)
-    //frequentItemsets.foreach(println(_))
+  /**
+    * Compare two model
+    * @param thisModel
+    * @param thatMode
+    */
+
+
+  def compareModel(thisModel: ( ListBuffer[Set[String]], String), thatMode: (ListBuffer[Set[String]], String)) : Unit = {
+    //println(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}")
+    //println(s"Number of frequent itemsets  ${thatMode._2}: ${thatMode._1.size}")
+
+    assert(thisModel._1.size == thatMode._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatMode._2)
+    assert(thisModel._1.toSet.sameElements(thatMode._1.toSet), "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatMode._2)
   }
 
   @Test
@@ -162,7 +161,10 @@ class PFPGrowthTest  {
     val conf = new SparkConf().setAppName("PFPGrowth")setMaster("local[2]")
     val sc = new SparkContext(conf)
 
-    for(testNum <- 2 to 2) {
+    for(testNum <- 0 to (minSupport.size - 1)) {
+
+      println("TEST: " + (testNum + 1))
+      println("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum))
 
       generateTransactionFile(testNum)
 
@@ -174,11 +176,9 @@ class PFPGrowthTest  {
         .run(transactionsSpark)
 
 
-      val flinkModel = new PFPGrowth(env, -1, minSupport(testNum)).run(transactionsFlink)
+      //TODO: FLINK val flinkModel = new PFPGrowth(env, -1, minSupport(testNum)).run(transactionsFlink)
 
-      println(s"Number of frequent itemsets  TEST: ${testNum} minSupport = ${minSupport(testNum)}")
-      println(s"Number of frequent itemsets SPARK: ${modelSpark.freqItemsets.count()}")
-
+      val localFPGrowthModel = testFPGrowthLocal(testNum)
 
       //Extract frequentSet in Spark
       var frequentSetsSpark: ListBuffer[Set[String]] = new ListBuffer()
@@ -206,6 +206,16 @@ class PFPGrowthTest  {
       }
       */
 
+      //Extract frequentSet in local FPGrowth
+      var frequentSetsLocalFPGrowth: ListBuffer[Set[String]] = new ListBuffer()
+      localFPGrowthModel.foreach{
+        itemset => {
+          var currentFrequentSet: Set[String] = Set()
+          itemset.items.foreach { item => currentFrequentSet += item.name}
+          frequentSetsLocalFPGrowth += currentFrequentSet
+        }
+      }
+
       if (numItems(testNum) <= 20) {
         //Run bruteforce model
         val modelBruteForce = bruteForceFrequentItemset(testNum)
@@ -220,14 +230,15 @@ class PFPGrowthTest  {
           itemset => frequentSetsBruteForce += itemset._1
         }
 
-        assert(frequentSetsSpark.toSet.sameElements(frequentSetsBruteForce.toSet))
-       // assert(frequentSetsFlink.toSet.sameElements(frequentSetsBruteForce.toSet))
-        //TODO: When flink implementation finished assert(modelFlink.count() == modelBruteForce.size)
+        compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsBruteForce, "BRUTE FORCE"))
+        compareModel((frequentSetsSpark, "SPARK") , (frequentSetsBruteForce, "BRUTE FORCE"))
+        //TODO: FLINK compareModel((frequentSetsFlink, "FLINK") , (frequentSetsBruteForce, "BRUTE FORCE"))
       }
 
-      //Compare between FLINK AND SPARK
-      //TODO: When flink implementation finished assert(frequentSetsFlink.toSet.sameElements(frequentSetsSpark.toSet))
-      //TODO: When flink implementation finished assert(modelSpark.freqItemsets.count() == frequentSetsFlink.size)
+      compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsSpark, "SPARK"))
+      //TODO: FLINK compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
+
+      //TODO: FLINK compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
     }
   }
 }
