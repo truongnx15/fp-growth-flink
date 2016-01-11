@@ -11,10 +11,10 @@ import org.apache.flink.types.Key
   * @param count = 1 if the tree is built from fresh. = sum frequency of corresponding node in tree if we're building tree in conditional pattern
   */
 
-class Item(var name: String, var frequency: Long, var count: Long) extends Ordered[Item] with Key[Item] {
+class Item(var name: String, var frequency: Long, var count: Long) extends Serializable with Ordered[Item]{
 
   //Rank to sort
-  var rank: Long = this.frequency
+  var rank: Long = 0
 
   def this() {
     this(null, 0, 1)
@@ -26,14 +26,15 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Order
     this(name, 0, 1)
     this.rank = frequency
   }
-  
+
   override def equals(o: Any) = o match  {
     case o: Item => this.name == o.name
     case _ => false
   }
   
   override def hashCode: Int = {
-    return 47 * (47 + name.length.hashCode())
+    //return 47 * (47 + name.length.hashCode())
+    return name.hashCode
   }
   
   override def compare(o: Item): Int = {
@@ -45,19 +46,5 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Order
   
   override def toString = {
     "[" + this.name + ", " + this.frequency + ", " + this.count + "]"
-  }
-
-  override def write(out: DataOutputView): Unit = {
-    out.writeUTF(name)
-    out.writeLong(frequency)
-    out.writeLong(count)
-    out.writeLong(rank)
-  }
-
-  override def read(in: DataInputView): Unit = {
-    name = in.readUTF()
-    frequency = in.readLong()
-    count = in.readLong()
-    rank = in.readLong()
   }
 }

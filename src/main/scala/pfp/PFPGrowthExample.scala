@@ -30,8 +30,6 @@ object PFPGrowthExample {
     //Read dataset
     val data = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
 
-    data.print()
-      
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
     

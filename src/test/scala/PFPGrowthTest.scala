@@ -15,7 +15,7 @@ class PFPGrowthTest  {
 
   val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2)
   val numItems = List[Int](10, 50, 70, 100, 150)
-  val numTransactions = List[Int](20, 30, 1000, 2000, 5000)
+  val numTransactions = List[Int](20, 30, 1000, 2000, 3000)
   val itemDelimiter = " "
   val transactionFile: String = "transactions.txt"
   //val transactionFile: String = "sample_fpgrowth_local.txt"
@@ -83,6 +83,8 @@ class PFPGrowthTest  {
 
     val frequentItems = allItems.filter( _.frequency >= minCount)
 
+    println("FREQUENT ITEM: " + frequentItems)
+
     val possibleTransaction: Long = 1L << frequentItems.size
 
     //Build subset of frequentItems
@@ -139,8 +141,11 @@ class PFPGrowthTest  {
 
 
   def compareModel(thisModel: ( ListBuffer[Set[String]], String), thatMode: (ListBuffer[Set[String]], String)) : Unit = {
-    //println(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}")
-    //println(s"Number of frequent itemsets  ${thatMode._2}: ${thatMode._1.size}")
+    println(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}")
+    println(s"Number of frequent itemsets  ${thatMode._2}: ${thatMode._1.size}")
+
+    println(thisModel._1)
+    println(thisModel._2)
 
     assert(thisModel._1.size == thatMode._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatMode._2)
     assert(thisModel._1.toSet.sameElements(thatMode._1.toSet), "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatMode._2)
@@ -166,7 +171,7 @@ class PFPGrowthTest  {
       println("TEST: " + (testNum + 1))
       println("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum))
 
-      generateTransactionFile(testNum)
+      //generateTransactionFile(testNum)
 
       val transactionsSpark = sc.textFile(transactionFile).map(_.split(" ")).cache()
 
@@ -176,7 +181,7 @@ class PFPGrowthTest  {
         .run(transactionsSpark)
 
 
-      //TODO: FLINK val flinkModel = new PFPGrowth(env, -1, minSupport(testNum)).run(transactionsFlink)
+      val flinkModel = new PFPGrowth(env, minSupport(testNum)).run(transactionsFlink)
 
       val localFPGrowthModel = testFPGrowthLocal(testNum)
 
@@ -193,7 +198,7 @@ class PFPGrowthTest  {
         }
       }
 
-      /*
+
       //Extract frequentSet in Flink
       var frequentSetsFlink: ListBuffer[Set[String]] = new ListBuffer()
       flinkModel.foreach {
@@ -204,7 +209,7 @@ class PFPGrowthTest  {
           frequentSetsFlink += currentFrequentSet
         }
       }
-      */
+
 
       //Extract frequentSet in local FPGrowth
       var frequentSetsLocalFPGrowth: ListBuffer[Set[String]] = new ListBuffer()
@@ -220,25 +225,20 @@ class PFPGrowthTest  {
         //Run bruteforce model
         val modelBruteForce = bruteForceFrequentItemset(testNum)
 
-        println(s"Number of frequent itemsets BRUTE: ${modelBruteForce.size}")
-
-        assert(modelSpark.freqItemsets.count() == modelBruteForce.size)
-        //TODO: When flink implementation finished assert(modelFlink.count() == modelBruteForce.size)
-
         var frequentSetsBruteForce: ListBuffer[Set[String]] = new ListBuffer()
         modelBruteForce.foreach {
           itemset => frequentSetsBruteForce += itemset._1
         }
 
-        compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsBruteForce, "BRUTE FORCE"))
         compareModel((frequentSetsSpark, "SPARK") , (frequentSetsBruteForce, "BRUTE FORCE"))
-        //TODO: FLINK compareModel((frequentSetsFlink, "FLINK") , (frequentSetsBruteForce, "BRUTE FORCE"))
+        compareModel((frequentSetsFlink, "FLINK") , (frequentSetsBruteForce, "BRUTE FORCE"))
+        compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsBruteForce, "BRUTE FORCE"))
       }
 
       compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsSpark, "SPARK"))
-      //TODO: FLINK compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
+      compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
 
-      //TODO: FLINK compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
+      compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
     }
   }
 }

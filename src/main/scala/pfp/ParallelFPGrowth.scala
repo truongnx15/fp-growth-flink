@@ -46,6 +46,9 @@ object ParallelFPGrowth {
         }
       )
 
+      println(transactions.size)
+      transactions.foreach(println(_))
+
       //Extract now group
       val nowGroup = hashMap.filter(_._2 == hashValue).map(_._1)
 

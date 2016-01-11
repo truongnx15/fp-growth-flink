@@ -58,7 +58,7 @@ class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[It
     return string.toString
   }
 
-  def compare(o: Itemset): Int = {
+  override def compare(o: Itemset): Int = {
     return this.support compare o.support
   }
 
