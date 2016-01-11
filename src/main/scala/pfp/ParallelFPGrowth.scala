@@ -2,13 +2,11 @@ package pfp
 
 import java.lang.Iterable
 
-import fpgrowth.{FPGrowth => FPGrowthLocal, Itemset, Item}
-import org.apache.flink.api.common.functions.{GroupReduceFunction, FlatMapFunction}
+import fpgrowth.{FPGrowth => FPGrowthLocal, Item, Itemset}
+import org.apache.flink.api.common.functions.{FlatMapFunction, GroupReduceFunction}
 import org.apache.flink.util.Collector
 
 import scala.collection.JavaConversions._
-import org.apache.flink.api.scala._
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -49,7 +47,7 @@ object ParallelFPGrowth {
       )
 
       //Extract now group
-      var nowGroup = hashMap.filter(_._2 == hashValue).map(_._1)
+      val nowGroup = hashMap.filter(_._2 == hashValue).map(_._1)
 
       val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, true);
 

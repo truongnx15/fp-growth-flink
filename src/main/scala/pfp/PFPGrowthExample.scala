@@ -3,16 +3,8 @@
 package pfp
 
 
-import org.apache.flink.api.scala._
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala.ExecutionEnvironment
-import org.apache.flink.api.scala.DataSet
-import fpgrowth.Itemset
-import fpgrowth.Item
-import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.util.Collector
-
-import scala.collection.mutable.ListBuffer
 
 object PFPGrowthExample {
 
@@ -25,22 +17,24 @@ object PFPGrowthExample {
     val lineDelimiter = "\n"
     
     //Parse input parameter
-    var input: String = parameter.get("input")
-    var topK: Int = parameter.get("topk").toInt
-    var minSupport: Double = parameter.get("minSupport").toDouble
+    //var input: String = parameter.get("input")
+    //var minSupport: Double = parameter.get("minSupport").toDouble
     
     //Init PFPGrowth algorithm
+
+    var minSupport:Double = 3.0/5
     
     var pfp = new PFPGrowth(env, minSupport)
 
+
     //Read dataset
-    val data = IOHelper.readInput(env, input, itemDelimiter)
+    val data = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
+
+    data.print()
       
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
     
-    //frequentItemsets.print()
-    
-    //TODO: IF HAVE TIME extract association rule
+    println(frequentItemsets)
   }
 }

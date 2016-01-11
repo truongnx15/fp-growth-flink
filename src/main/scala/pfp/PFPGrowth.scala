@@ -40,16 +40,16 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     val gList = mutable.HashMap.empty[Item, Long]
 
     FList.foreach { x => gList.put(new Item(x.name, x.frequency, 1), x.hashCode % numPartition)}
-    val broadcastGList = env.fromCollection(gList)
-
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList)).withBroadcastSet(broadcastGList, "gList")
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList))
       .groupBy(0)
-      .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount)).withBroadcastSet(broadcastGList, "gList")
+      .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount))
+
 
     //STEP 5:
+
     val frequentItemsets: List[Itemset] = step4output
       .flatMap(Aggregation.AggregationFlatMap)
       .groupBy(0)
@@ -57,7 +57,6 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       .collect()
       .toList
 
-
-    return null
+    return frequentItemsets
   }
 }

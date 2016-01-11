@@ -1,6 +1,9 @@
 
 package fpgrowth
 
+import org.apache.flink.core.memory.{DataOutputView, DataInputView}
+import org.apache.flink.types.Key
+
 /**
   *
   * @param name
@@ -8,7 +11,7 @@ package fpgrowth
   * @param count = 1 if the tree is built from fresh. = sum frequency of corresponding node in tree if we're building tree in conditional pattern
   */
 
-class Item(var name: String, var frequency: Long, var count: Long) extends Ordered[Item] {
+class Item(var name: String, var frequency: Long, var count: Long) extends Ordered[Item] with Key[Item] {
 
   //Rank to sort
   var rank: Long = this.frequency
@@ -33,7 +36,7 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Order
     return 47 * (47 + name.length.hashCode())
   }
   
-  def compare(o: Item): Int = {
+  override def compare(o: Item): Int = {
     if (this.name != o.name)
       return this.rank compare o.rank
     else
@@ -42,5 +45,19 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Order
   
   override def toString = {
     "[" + this.name + ", " + this.frequency + ", " + this.count + "]"
+  }
+
+  override def write(out: DataOutputView): Unit = {
+    out.writeUTF(name)
+    out.writeLong(frequency)
+    out.writeLong(count)
+    out.writeLong(rank)
+  }
+
+  override def read(in: DataInputView): Unit = {
+    name = in.readUTF()
+    frequency = in.readLong()
+    count = in.readLong()
+    rank = in.readLong()
   }
 }

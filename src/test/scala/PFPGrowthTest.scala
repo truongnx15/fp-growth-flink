@@ -13,7 +13,7 @@ import scala.util.Random
 
 class PFPGrowthTest  {
 
-  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.1)
+  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2)
   val numItems = List[Int](10, 50, 70, 100, 150)
   val numTransactions = List[Int](20, 30, 1000, 2000, 5000)
   val itemDelimiter = " "
