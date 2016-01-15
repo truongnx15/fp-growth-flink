@@ -14,7 +14,6 @@ import scala.collection.mutable
 /**
  * Class to run Parallel FPGrowth algorithm in flink
  * param: env ExecutionEnvironment Execution environment of flink
- * param: topK Int get top K frequent itemset(this is parameter of Parallel FPGrowth)
  * param: minSupport Double minimum support of result itemsets
  * 
  */
@@ -30,34 +29,38 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
       .collect()
 
-   val minCount: Long = math.ceil(minSupport * data.count()).toLong
+    val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
-    val FList = unsortedList.sortWith(_ > _)
+    val FList = unsortedList.sortWith(_.frequency > _ .frequency)
     //STEP 3: Grouping items step
-    val numPartition = env.getParallelism
+    //val numPartition = env.getParallelism
+    val numPartition = 3
 
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Long]
 
-    FList.foreach(x => gList += (new Item(x.name, x.frequency, 1) -> (x.hashCode % numPartition)))
+    val order = FList.zipWithIndex.toMap
 
-    print("GLIST: " + FList)
+    FList.foreach(x => gList += (new Item(x.name, x.frequency, 1) -> (x.hashCode % numPartition)))
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList))
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(order, gList, minCount))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount))
 
 
     //STEP 5:
-
+   /*
     val frequentItemsets: List[Itemset] = step4output
       .flatMap(Aggregation.AggregationFlatMap)
       .groupBy(0)
       .reduceGroup(Aggregation.AggregationGroupReduce)
       .collect()
       .toList
+    */
+
+    val frequentItemsets = step4output.collect().toList
 
     return frequentItemsets
   }

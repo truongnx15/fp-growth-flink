@@ -11,55 +11,55 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object ParallelFPGrowth {
-  class ParallelFPGrowthflatMap(var hashMap : mutable.HashMap[Item, Long]) extends FlatMapFunction[Itemset, (Long, Itemset)] {
+  class ParallelFPGrowthflatMap(val order: Map[Item, Int], val hashMap : mutable.HashMap[Item, Long], val minCount: Long) extends FlatMapFunction[Itemset, (Long, Itemset)] {
 
     override def flatMap(itemset: Itemset, collector: Collector[(Long, Itemset)]): Unit = {
+      itemset.sortItems(order)
 
+      var checkingHashMap = hashMap
       for(j <- (itemset.items.size - 1) to (0, -1)) {
-        var hashNum = hashMap.getOrElse(itemset.items(j), null)
+        val hashNum = checkingHashMap.getOrElse(itemset.items(j), null)
         if (hashNum != null) {
+          val hashNumLong: Long = hashNum.toString.toLong
 
-          hashMap = hashMap.filter(_._2 != hashNum)
-          var newItemset = new Itemset()
+          checkingHashMap = checkingHashMap.filter(_._2 != hashNumLong)
+
+          val newItemset = new Itemset()
 
           for(i <- 0 to j) {
             newItemset.addItem(itemset.items(i))
           }
 
-          collector.collect((hashNum.toString.toLong, newItemset))
-
+          collector.collect((hashNumLong, newItemset))
         }
       }
     }
   }
 
-  class ParallelFPGrowthGroupReduce(var hashMap: mutable.HashMap[Item, Long], var minCount: Long) extends GroupReduceFunction[(Long, Itemset), Itemset] {
+  class ParallelFPGrowthGroupReduce(val hashMap: mutable.HashMap[Item, Long], val minCount: Long) extends GroupReduceFunction[(Long, Itemset), Itemset] {
     override def reduce(iterable: Iterable[(Long, Itemset)], collector: Collector[Itemset]): Unit = {
 
       var transactions = new ListBuffer[Itemset]()
-      var hashValue: Long = 0
+      var groupId: Long = 0
 
       iterable.foreach(
         tuple => {
-          hashValue = tuple._1
+          groupId = tuple._1
           transactions += tuple._2
         }
       )
 
-      println(transactions.size)
-      transactions.foreach(println(_))
-
       //Extract now group
-      val nowGroup = hashMap.filter(_._2 == hashValue).map(_._1)
+      val nowGroup = hashMap.filter(_._2 == groupId).map(_._1)
 
-      val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, true);
+      val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, false);
 
       nowGroup.foreach(
         item => {
+          var itemset = new Itemset()
+          itemset.setSupport(item.frequency)
           val frequentSets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null, item)
-          frequentSets.foreach(
-            itemset => {collector.collect(itemset)}
-          )
+          frequentSets.foreach(collector.collect(_))
         }
       )
     }

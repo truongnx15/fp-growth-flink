@@ -17,22 +17,24 @@ object PFPGrowthExample {
     val lineDelimiter = "\n"
     
     //Parse input parameter
-    //var input: String = parameter.get("input")
-    //var minSupport: Double = parameter.get("minSupport").toDouble
+    var input: String = parameter.get("input")
+    var minSupport: Double = parameter.get("minSupport").toDouble
     
     //Init PFPGrowth algorithm
 
-    var minSupport:Double = 3.0/5
-    
+    //Set minSupport to test
+    minSupport = 0.25
+
     var pfp = new PFPGrowth(env, minSupport)
 
-
     //Read dataset
-    val data = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
+    val data = IOHelper.readInput(env, input, itemDelimiter)
 
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
+
+    //frequentItemsets.foreach(println(_))
     
-    println(frequentItemsets)
+    println(frequentItemsets.size)
   }
 }

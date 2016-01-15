@@ -33,8 +33,7 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
   }
   
   override def hashCode: Int = {
-    //return 47 * (47 + name.length.hashCode())
-    return name.hashCode
+    return 47 * (47 + name.length.hashCode())
   }
   
   override def compare(o: Item): Int = {
@@ -45,6 +44,6 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
   }
   
   override def toString = {
-    "[" + this.name + ", " + this.frequency + ", " + this.count + "]"
+    "[" + this.name + ", " + this.frequency + ", " + this.rank + "]"
   }
 }

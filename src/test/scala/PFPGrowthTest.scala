@@ -18,20 +18,19 @@ class PFPGrowthTest  {
   val numTransactions = List[Int](20, 30, 1000, 2000, 3000)
   val itemDelimiter = " "
   val transactionFile: String = "transactions.txt"
-  //val transactionFile: String = "sample_fpgrowth_local.txt"
 
   def generateTransactionFile(testNum: Int): Unit = {
     val random = Random
     val writer = new PrintWriter( transactionFile , "UTF-8")
 
-    for(numTrans <- 0 to numTransactions(testNum)) {
+    for(numTrans <- 0 to (numTransactions(testNum) - 1)) {
       if (numTrans > 0) {
         writer.write("\n")
       }
       //Store items in the transaction
       var items: Set[String] = Set()
 
-      var tranLength: Int = random.nextInt(numItems(testNum) * 3/4) + 1
+      val tranLength: Int = random.nextInt(numItems(testNum) * 3/4) + 1
 
       while (items.size < tranLength) {
         //Generate a letter for item
@@ -82,8 +81,6 @@ class PFPGrowthTest  {
       .collect()
 
     val frequentItems = allItems.filter( _.frequency >= minCount)
-
-    println("FREQUENT ITEM: " + frequentItems)
 
     val possibleTransaction: Long = 1L << frequentItems.size
 
@@ -136,19 +133,20 @@ class PFPGrowthTest  {
   /**
     * Compare two model
     * @param thisModel
-    * @param thatMode
+    * @param thatModel
     */
 
 
-  def compareModel(thisModel: ( ListBuffer[Set[String]], String), thatMode: (ListBuffer[Set[String]], String)) : Unit = {
+  def compareModel(thisModel: ( ListBuffer[Set[String]], String), thatModel: (ListBuffer[Set[String]], String)) : Unit = {
     println(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}")
-    println(s"Number of frequent itemsets  ${thatMode._2}: ${thatMode._1.size}")
+    println(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}")
 
-    println(thisModel._1)
-    println(thisModel._2)
+    //println(thisModel._2 + ": " + thisModel._1.toSet)
+    //println(thatModel._2 + ": " + thatModel._1.toSet)
+    //println(thisModel._1.toSet == thatModel._1.toSet)
 
-    assert(thisModel._1.size == thatMode._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatMode._2)
-    assert(thisModel._1.toSet.sameElements(thatMode._1.toSet), "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatMode._2)
+    assert(thisModel._1.size == thatModel._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatModel._2)
+    assert(thisModel._1.toSet == thatModel._1.toSet, "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatModel._2)
   }
 
   @Test
@@ -165,25 +163,37 @@ class PFPGrowthTest  {
 
     val conf = new SparkConf().setAppName("PFPGrowth")setMaster("local[2]")
     val sc = new SparkContext(conf)
+    val startTime = System.currentTimeMillis()
 
     for(testNum <- 0 to (minSupport.size - 1)) {
 
       println("TEST: " + (testNum + 1))
       println("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum))
 
-      //generateTransactionFile(testNum)
+      generateTransactionFile(testNum)
 
+      //Mesure time for spark:
+      var startTime: Long = System.currentTimeMillis()
+
+      //SPARK RUNNING
       val transactionsSpark = sc.textFile(transactionFile).map(_.split(" ")).cache()
-
       val modelSpark = new FPGrowth()
         .setMinSupport(minSupport(testNum))
         //.setNumPartitions(params.numPartition)
         .run(transactionsSpark)
+      println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0)
+      startTime = System.currentTimeMillis()
 
 
+      //FLINK RUNNING
       val flinkModel = new PFPGrowth(env, minSupport(testNum)).run(transactionsFlink)
+      println("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0)
+      startTime = System.currentTimeMillis()
 
+      //LOCAL FPGROWTH RUNNING
       val localFPGrowthModel = testFPGrowthLocal(testNum)
+      println("TEST: " + testNum + " - LOCAL FPGROWTH: " + (System.currentTimeMillis() - startTime)/1000.0)
+      startTime = System.currentTimeMillis()
 
       //Extract frequentSet in Spark
       var frequentSetsSpark: ListBuffer[Set[String]] = new ListBuffer()
