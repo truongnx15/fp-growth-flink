@@ -26,8 +26,7 @@ object ParallelCounting {
       //For each item in the transaction, output pair (item, occurrence[1 by default])
       itemset.map { 
         x => {
-          x.frequency = 1
-          out.collect((x, 1))
+          out.collect((x, 1L))
         }
       }
     }

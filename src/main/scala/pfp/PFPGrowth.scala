@@ -33,15 +33,23 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     val FList = unsortedList.sortWith(_.frequency > _ .frequency)
     //STEP 3: Grouping items step
-    //val numPartition = env.getParallelism
-    val numPartition = 3
+    val numPartition = env.getParallelism
+    //val numPartition = 3
 
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Long]
 
     val order = FList.zipWithIndex.toMap
 
-    FList.foreach(x => gList += (new Item(x.name, x.frequency, 1) -> (x.hashCode % numPartition)))
+    var partitionCount: Long = 0
+    FList.foreach(
+      x => {
+        gList += (new Item(x.name, x.frequency, 1) -> (partitionCount % numPartition))
+        partitionCount += 1
+      }
+    )
+
+
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val step4output: DataSet[Itemset] = data
