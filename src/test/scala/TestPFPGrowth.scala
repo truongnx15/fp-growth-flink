@@ -13,9 +13,9 @@ import scala.util.Random
 
 class TestPFPGrowth  {
 
-  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2)
-  val numItems = List[Int](10, 50, 70, 100, 150)
-  val numTransactions = List[Int](20, 30, 1000, 2000, 3000)
+  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2, 0.15)
+  val numItems = List[Int](10, 50, 70, 100, 150, 150)
+  val numTransactions = List[Int](20, 30, 1000, 2000, 3000, 5000)
   val itemDelimiter = " "
   val inputFolder = "testdata"
   var outputWriter: PrintWriter = _
@@ -172,7 +172,7 @@ class TestPFPGrowth  {
     val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
     val modelSpark = new FPGrowth()
       .setMinSupport(minSupport(testNum))
-      //.setNumPartitions(params.numPartition)
+      .setNumPartitions(4)
       .run(transactionsSpark)
     println("NUM FREQUENT SETS SPARK: " + modelSpark.freqItemsets.collect().size)
     println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")

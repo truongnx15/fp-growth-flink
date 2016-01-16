@@ -139,16 +139,12 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
         }
       }
 
-
-      frequentItemsets.foreach{
-        itemset => {itemset.items = itemset.items.filter(_.frequency >= minCount)}
-      }
-
+      frequentItemsets.foreach{ itemset => itemset.items = itemset.items.filter(_.frequency >= minCount)}
 
       //Build order
-      val items = frequencyMap.map( item => {
-        new Item(item._1.name, item._2, item._1.count)
-      }).toList
+      frequencyMap.map( item =>  item._1.frequency = item._2)
+
+      val items = frequencyMap.keySet.toList
 
       val localOrder = items.sortWith(_.frequency > _.frequency).zipWithIndex.toMap
 
@@ -252,6 +248,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
       fptree.headerTable.foreach {
         case (item, fpTreeNode) => {
           var itemFrequency: Long = 0;
+
           var tmpFPTreeNode = fpTreeNode
           while (tmpFPTreeNode != null) {
             itemFrequency += tmpFPTreeNode.frequency
