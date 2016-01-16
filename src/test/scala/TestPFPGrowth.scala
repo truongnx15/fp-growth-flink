@@ -11,17 +11,18 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-class PFPGrowthTest  {
+class TestPFPGrowth  {
 
   val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2)
   val numItems = List[Int](10, 50, 70, 100, 150)
   val numTransactions = List[Int](20, 30, 1000, 2000, 3000)
   val itemDelimiter = " "
-  val transactionFile: String = "transactions.txt"
+  val inputFolder = "testdata"
+  var outputWriter: PrintWriter = _
 
   def generateTransactionFile(testNum: Int): Unit = {
     val random = Random
-    val writer = new PrintWriter( transactionFile , "UTF-8")
+    val writer = new PrintWriter( getInputFileName(testNum) , "UTF-8")
 
     for(numTrans <- 0 to (numTransactions(testNum) - 1)) {
       if (numTrans > 0) {
@@ -54,7 +55,7 @@ class PFPGrowthTest  {
   def bruteForceFrequentItemset(testNum: Int): ListBuffer[(Set[String], Long)] = {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
-    val transactions = IOHelper.readInput(env, transactionFile, itemDelimiter)
+    val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val minCount: Int = math.ceil(minSupport(testNum) * transactions.count()).toInt
 
     var allSetTransaction: ListBuffer[Set[String]] = ListBuffer()
@@ -116,7 +117,7 @@ class PFPGrowthTest  {
     //Employ flink and FPGrowth to read data
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, transactionFile, itemDelimiter)
+    val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
 
     //convert DataSet to ListBuffer
@@ -138,8 +139,8 @@ class PFPGrowthTest  {
 
 
   def compareModel(thisModel: ( ListBuffer[Set[String]], String), thatModel: (ListBuffer[Set[String]], String)) : Unit = {
-    println(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}")
-    println(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}")
+    outputWriter.write(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
+    outputWriter.write(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
     //println(thisModel._2 + ": " + thisModel._1.toSet)
     //println(thatModel._2 + ": " + thatModel._1.toSet)
@@ -149,12 +150,57 @@ class PFPGrowthTest  {
     assert(thisModel._1.toSet == thatModel._1.toSet, "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatModel._2)
   }
 
+  def getInputFileName(testNum: Int): String = {
+    return inputFolder + "/transactions-" + testNum + ".txt"
+  }
+
+  def getOutputFileName(testNum: Int): String = {
+    return inputFolder + "/transactions-" + testNum + "-result.txt"
+  }
+
+  @Test
+  def testSpeedSpark() : Unit = {
+
+    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    val testNum = 3
+    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
+    val sc = new SparkContext(conf)
+
+    var startTime: Long = System.currentTimeMillis()
+
+    //SPARK RUNNING
+    val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
+    val modelSpark = new FPGrowth()
+      .setMinSupport(minSupport(testNum))
+      //.setNumPartitions(params.numPartition)
+      .run(transactionsSpark)
+    println("NUM FREQUENT SETS SPARK: " + modelSpark.freqItemsets.collect().size)
+    println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
+    startTime = System.currentTimeMillis()
+  }
+
+  @Test
+  def testSpeedFlink(): Unit = {
+    val testNum = 3
+    val inputFileName = getInputFileName(testNum)
+    val env = ExecutionEnvironment.getExecutionEnvironment
+
+    var startTime: Long = System.currentTimeMillis()
+    val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
+    val flinkModel = new PFPGrowth(env, minSupport(testNum)).run(transactionsFlink)
+
+    println("NUM FREQUENT SETS FLINK: " + flinkModel.size)
+
+    println("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0)
+
+  }
+
   @Test
   def testWithSpark: Unit = {
 
     //FLINK init
     val env = ExecutionEnvironment.getExecutionEnvironment
-    val transactionsFlink = IOHelper.readInput(env, transactionFile, itemDelimiter)
+
 
     //SPARK init
 
@@ -167,32 +213,34 @@ class PFPGrowthTest  {
 
     for(testNum <- 0 to (minSupport.size - 1)) {
 
-      println("TEST: " + (testNum + 1))
-      println("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum))
+      outputWriter = new PrintWriter( getOutputFileName(testNum) , "UTF-8")
 
-      generateTransactionFile(testNum)
+      //println("TEST: " + (testNum + 1))
+      outputWriter.write("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum) + "\n")
+      //generateTransactionFile(testNum)
 
       //Mesure time for spark:
       var startTime: Long = System.currentTimeMillis()
 
       //SPARK RUNNING
-      val transactionsSpark = sc.textFile(transactionFile).map(_.split(" ")).cache()
+      val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
       val modelSpark = new FPGrowth()
         .setMinSupport(minSupport(testNum))
         //.setNumPartitions(params.numPartition)
         .run(transactionsSpark)
-      println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0)
+      outputWriter.write("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
       startTime = System.currentTimeMillis()
 
 
       //FLINK RUNNING
+      val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
       val flinkModel = new PFPGrowth(env, minSupport(testNum)).run(transactionsFlink)
-      println("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0)
+      outputWriter.write("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
       startTime = System.currentTimeMillis()
 
       //LOCAL FPGROWTH RUNNING
       val localFPGrowthModel = testFPGrowthLocal(testNum)
-      println("TEST: " + testNum + " - LOCAL FPGROWTH: " + (System.currentTimeMillis() - startTime)/1000.0)
+      outputWriter.write("TEST: " + testNum + " - LOCAL FPGROWTH: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
       startTime = System.currentTimeMillis()
 
       //Extract frequentSet in Spark
@@ -249,6 +297,8 @@ class PFPGrowthTest  {
       compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
 
       compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
+
+      outputWriter.close()
     }
   }
 }
