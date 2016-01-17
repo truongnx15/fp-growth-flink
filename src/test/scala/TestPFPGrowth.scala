@@ -149,8 +149,8 @@ class TestPFPGrowth  {
     outputWriter.write(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
     outputWriter.write(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
-    //print(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
-    //print(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
+    print(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
+    print(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
     //println(thisModel._2 + ": " + thisModel._1.toSet)
     //println(thatModel._2 + ": " + thatModel._1.toSet)
@@ -171,6 +171,7 @@ class TestPFPGrowth  {
   //@Test
   def testSpeedSpark(testNum: Int) = {
 
+    //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
@@ -219,9 +220,6 @@ class TestPFPGrowth  {
 
     //SPARK init
 
-    //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
-
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
     val sc = new SparkContext(conf)
 
@@ -229,7 +227,7 @@ class TestPFPGrowth  {
 
       outputWriter = new PrintWriter( getOutputFileName(testNum) , "UTF-8")
 
-      //println("TEST: " + (testNum + 1))
+      println("TEST: " + (testNum + 1))
       outputWriter.write("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum) + "\n")
       generateTransactionFile(testNum)
 
@@ -299,7 +297,7 @@ class TestPFPGrowth  {
         compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsBruteForce, "BRUTE FORCE"))
       }
 
-      if (numItems(testNum) <= maxLocalFPGrowthTransactions) {
+      if (numTransactions(testNum) <= maxLocalFPGrowthTransactions) {
         compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsSpark, "SPARK"))
         compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
       }
