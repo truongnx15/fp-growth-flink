@@ -19,8 +19,10 @@ import scala.collection.mutable
  */
 
 class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
+
+  var numPartition = env.getParallelism
   
-  def run(data: DataSet[Itemset]): List[Itemset] = {
+  def run(data: DataSet[Itemset]) = {
 
    //STEP 2: parallel counting step
     val unsortedList = data
@@ -32,14 +34,12 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
     val FList = unsortedList.sortWith(_.frequency > _ .frequency)
+
+
     //STEP 3: Grouping items step
-    val numPartition = env.getParallelism
-    //val numPartition = 3
 
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Long]
-
-    val order = FList.zipWithIndex.toMap
 
     var partitionCount: Long = 0
     FList.foreach(
@@ -49,11 +49,11 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       }
     )
 
-
+    //val order = FList.zipWithIndex.toMap
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
-    val step4output: DataSet[Itemset] = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(order, gList, minCount))
+    val frequentItemsets = data
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList, minCount))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount))
 
@@ -68,8 +68,6 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       .toList
     */
 
-    val frequentItemsets = step4output.collect().toList
-
-    return frequentItemsets
+    frequentItemsets.collect()
   }
 }

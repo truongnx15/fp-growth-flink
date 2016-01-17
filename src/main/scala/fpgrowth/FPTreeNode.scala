@@ -16,7 +16,5 @@ class FPTreeNode(var item: Item, var frequency: Long, var parent: FPTreeNode) {
   //check if the node is root node
   def isRoot: Boolean = item == null
 
-  override def toString(): String = {
-    return (item + ":" + frequency)
-  }
+  override def toString: String = item + ":" + frequency
 }

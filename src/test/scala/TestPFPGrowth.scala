@@ -1,21 +1,20 @@
 import java.io.PrintWriter
 
-import fpgrowth.{FPGrowth => FPGrowthLocal, Itemset, Item}
+import fpgrowth.{FPGrowth => FPGrowthLocal, Item, Itemset}
 import org.apache.flink.api.scala._
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.{SparkConf, SparkContext}
 import org.junit._
 import pfp.{IOHelper, PFPGrowth, ParallelCounting}
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 class TestPFPGrowth  {
 
-  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2, 0.15)
-  val numItems = List[Int](10, 50, 70, 100, 150, 150)
-  val numTransactions = List[Int](20, 30, 1000, 2000, 3000, 5000)
+  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2 ) //, 0.15)
+  val numItems = List[Int](10, 50, 70, 100, 150) //, 150)
+  val numTransactions = List[Int](20, 30, 1000, 2000, 3000) //, 5000)
   val itemDelimiter = " "
   val inputFolder = "testdata"
   var outputWriter: PrintWriter = _
@@ -24,7 +23,7 @@ class TestPFPGrowth  {
     val random = Random
     val writer = new PrintWriter( getInputFileName(testNum) , "UTF-8")
 
-    for(numTrans <- 0 to (numTransactions(testNum) - 1)) {
+    for(numTrans <- 0 until numTransactions(testNum)) {
       if (numTrans > 0) {
         writer.write("\n")
       }
@@ -56,17 +55,17 @@ class TestPFPGrowth  {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
     val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
-    val minCount: Int = math.ceil(minSupport(testNum) * transactions.count()).toInt
+    val minCount = math.ceil(minSupport(testNum) * transactions.count()).toInt
 
     var allSetTransaction: ListBuffer[Set[String]] = ListBuffer()
 
     var allFrequentSetTransaction: ListBuffer[(Set[String], Long)] = ListBuffer()
 
     //Convert each transaction to a set
-    val setTransactions = transactions.collect().foreach {
+    transactions.collect().foreach {
       itemset => {
         var setOfItems: Set[String] = Set()
-        val items = itemset.getItems()
+        val items = itemset.items
         items.foreach {
           x => setOfItems += x.name
         }
@@ -109,7 +108,8 @@ class TestPFPGrowth  {
       }
     }
 
-    return allFrequentSetTransaction
+    //Return result
+    allFrequentSetTransaction
   }
 
   def testFPGrowthLocal(testNum: Int): ListBuffer[Itemset] = {
@@ -126,15 +126,16 @@ class TestPFPGrowth  {
 
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting);
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting)
 
-    return fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
+    //Result result
+    fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null)
   }
 
   /**
     * Compare two model
-    * @param thisModel
-    * @param thatModel
+    * @param thisModel One model to compare
+    * @param thatModel The other model to compare
     */
 
 
@@ -151,18 +152,18 @@ class TestPFPGrowth  {
   }
 
   def getInputFileName(testNum: Int): String = {
-    return inputFolder + "/transactions-" + testNum + ".txt"
+    inputFolder + "/transactions-" + testNum + ".txt"
   }
 
   def getOutputFileName(testNum: Int): String = {
-    return inputFolder + "/transactions-" + testNum + "-result.txt"
+    inputFolder + "/transactions-" + testNum + "-result.txt"
   }
 
   @Test
   def testSpeedSpark() : Unit = {
 
     System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
-    val testNum = 3
+    val testNum = 5
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
     val sc = new SparkContext(conf)
 
@@ -174,7 +175,8 @@ class TestPFPGrowth  {
       .setMinSupport(minSupport(testNum))
       .setNumPartitions(4)
       .run(transactionsSpark)
-    println("NUM FREQUENT SETS SPARK: " + modelSpark.freqItemsets.collect().size)
+
+    println("NUM FREQUENT SETS SPARK: " + modelSpark.freqItemsets.collect().length)
     println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
     startTime = System.currentTimeMillis()
   }
@@ -185,7 +187,7 @@ class TestPFPGrowth  {
     val inputFileName = getInputFileName(testNum)
     val env = ExecutionEnvironment.getExecutionEnvironment
 
-    var startTime: Long = System.currentTimeMillis()
+    var startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val flinkModel = new PFPGrowth(env, minSupport(testNum)).run(transactionsFlink)
 
@@ -196,7 +198,7 @@ class TestPFPGrowth  {
   }
 
   @Test
-  def testWithSpark: Unit = {
+  def testWithSpark(): Unit = {
 
     //FLINK init
     val env = ExecutionEnvironment.getExecutionEnvironment
@@ -207,17 +209,16 @@ class TestPFPGrowth  {
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
 
-    val conf = new SparkConf().setAppName("PFPGrowth")setMaster("local[2]")
+    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
     val sc = new SparkContext(conf)
-    val startTime = System.currentTimeMillis()
 
-    for(testNum <- 0 to (minSupport.size - 1)) {
+    for(testNum: Int <- minSupport.indices) {
 
       outputWriter = new PrintWriter( getOutputFileName(testNum) , "UTF-8")
 
       //println("TEST: " + (testNum + 1))
       outputWriter.write("transactions: " + numTransactions(testNum) + " max number of Items: " + numItems(testNum) + " : minSupport: " + minSupport(testNum) + "\n")
-      //generateTransactionFile(testNum)
+      generateTransactionFile(testNum)
 
       //Mesure time for spark:
       var startTime: Long = System.currentTimeMillis()
@@ -261,7 +262,7 @@ class TestPFPGrowth  {
       var frequentSetsFlink: ListBuffer[Set[String]] = new ListBuffer()
       flinkModel.foreach {
         itemset => {
-          var items = itemset.getItems()
+          var items = itemset.items
           var currentFrequentSet: Set[String] = Set()
           items.foreach { item => currentFrequentSet += item.name}
           frequentSetsFlink += currentFrequentSet

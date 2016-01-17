@@ -11,14 +11,20 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object ParallelFPGrowth {
-  class ParallelFPGrowthflatMap(val order: Map[Item, Int], val hashMap : mutable.HashMap[Item, Long], val minCount: Long) extends FlatMapFunction[Itemset, (Long, Itemset)] {
+  class ParallelFPGrowthflatMap(val gList : mutable.HashMap[Item, Long], val minCount: Long) extends FlatMapFunction[Itemset, (Long, Itemset)] {
 
     override def flatMap(itemset: Itemset, collector: Collector[(Long, Itemset)]): Unit = {
+
+      val order = gList.keySet.zipWithIndex.toMap
+
       itemset.sortItems(order)
 
-      var checkingHashMap = hashMap
+      var checkingHashMap = gList
+
       for(j <- (itemset.items.size - 1) to (0, -1)) {
+
         val hashNum = checkingHashMap.getOrElse(itemset.items(j), null)
+
         if (hashNum != null) {
           val hashNumLong: Long = hashNum.toString.toLong
 
@@ -36,7 +42,7 @@ object ParallelFPGrowth {
     }
   }
 
-  class ParallelFPGrowthGroupReduce(val hashMap: mutable.HashMap[Item, Long], val minCount: Long) extends GroupReduceFunction[(Long, Itemset), Itemset] {
+  class ParallelFPGrowthGroupReduce(val gList: mutable.HashMap[Item, Long], val minCount: Long) extends GroupReduceFunction[(Long, Itemset), Itemset] {
     override def reduce(iterable: Iterable[(Long, Itemset)], collector: Collector[Itemset]): Unit = {
 
       var transactions = new ListBuffer[Itemset]()
@@ -50,14 +56,14 @@ object ParallelFPGrowth {
       )
 
       //Extract now group
-      val nowGroup = hashMap.filter(_._2 == groupId).map(_._1)
+      val nowGroup = {
+        gList.filter(_._2 == groupId).keys
+      }
 
-      val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, false);
+      val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, false)
 
       nowGroup.foreach(
         item => {
-          var itemset = new Itemset()
-          itemset.setSupport(item.frequency)
           val frequentSets = fpGrowthLocal.extractPattern(fpGrowthLocal.fptree, null, item)
           frequentSets.foreach(collector.collect(_))
         }

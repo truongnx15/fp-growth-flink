@@ -21,10 +21,10 @@ object ParallelCounting {
   def ParallelCountingFlatMap = new FlatMapFunction[Itemset, (Item, Long)] {
     override def flatMap(transaction: Itemset, out: Collector[(Item, Long)]): Unit = {
       //Retrieve the list of item in a transaction
-      val itemset = transaction.getItems()
+      val itemset = transaction.items
       
       //For each item in the transaction, output pair (item, occurrence[1 by default])
-      itemset.map { 
+      itemset.foreach {
         x => {
           out.collect((x, 1L))
         }
@@ -36,11 +36,11 @@ object ParallelCounting {
     override def reduce(items: java.lang.Iterable[(Item, Long)], out: Collector[Item]): Unit = {
       
       //Temporary variable before returning the final result
-      var sum: Long = 0
+      var sum = 0L
       var item: Item = null
       
       //Loop through the group and sum number of occurrences for the item
-      items.map { 
+      items.foreach {
         x => {
           item = x._1
           sum += x._2

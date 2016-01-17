@@ -1,9 +1,7 @@
-//package fpgrowth
 package fpgrowth
 
 import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.HashMap
 
 class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[Itemset] {
 
@@ -14,36 +12,15 @@ class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[It
   }
 
   /**
-    * @return the items
-    */
-  def getItems(): ListBuffer[Item] = {
-    return items
-  }
-
-  /**
     * @param items the items to set
     */
   def setItems(items: ListBuffer[Item]) {
     this.items = items
   }
 
-  /**
-    * @return the support
-    */
-  def getSupport(): Long = {
-    return support
-  }
-
-  /**
-    * @param support the support to set
-    */
-  def setSupport(support: Long) {
-    this.support = support
-  }
-
   @throws(classOf[CloneNotSupportedException])
   override def clone: Itemset = {
-    return super.clone.asInstanceOf[Itemset]
+    super.clone.asInstanceOf[Itemset]
   }
 
   def addItem(item: Item) {
@@ -55,11 +32,11 @@ class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[It
     string.append("(")
     items.foreach { string.append(_)}
     string.append("):" + support)
-    return string.toString
+    string.toString
   }
 
   override def compare(o: Itemset): Int = {
-    return this.support compare o.support
+    this.support compare o.support
   }
 
   def sortItems(order: immutable.Map[Item, Int]): Unit = {
