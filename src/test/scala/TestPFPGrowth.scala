@@ -176,7 +176,7 @@ class TestPFPGrowth  {
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
-    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
+    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]")
     val sc = new SparkContext(conf)
 
     var startTime: Long = System.currentTimeMillis()
@@ -217,15 +217,6 @@ class TestPFPGrowth  {
 
   @Test
   def testWithSpark(): Unit = {
-
-    //FLINK init
-    val env = ExecutionEnvironment.getExecutionEnvironment
-
-
-    //SPARK init
-
-    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
-    val sc = new SparkContext(conf)
 
     for(testNum: Int <- minSupport.indices) {
 
