@@ -21,7 +21,7 @@ import scala.collection.mutable
 class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
-  
+
   def run(data: DataSet[Itemset]) = {
 
    //STEP 2: parallel counting step

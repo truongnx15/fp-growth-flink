@@ -7,6 +7,7 @@ import scala.collection.{immutable, mutable}
 
 /**
   * FPGrowth in memory
+  *
   * @param itemsets the input transactions
   * @param minCount minimum occurrences to be considerd
   * @param sorting whether the itemset should be sorted based on order of frequency
@@ -88,6 +89,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
   /**
     * Generate the conditional based patterns for one item in the header table of fpTree
+    *
     * @param fpTree the tree from which conditional base patterns are extracted
     * @param item the item for which the conditional base patterns are extracted
     * @return list of conditional base patterns
@@ -107,11 +109,11 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
         while (!pathNode.isRoot) {
 
-          val newItem = new Item(pathNode.item.name, 1, currentNode.frequency)
-          itemset.addItem(newItem)
+          val newItem = new Item(pathNode.item.name, 0, currentNode.frequency)
 
-          //val countFrequency = frequencyMap.getOrElseUpdate(newItem, 0) + (currentNode.frequency)
-          //frequencyMap += (newItem -> countFrequency)
+          if (pathNode.item.frequency >= minCount) {
+            itemset.addItem(newItem)
+          }
 
           pathNode = pathNode.parent
         }
@@ -129,6 +131,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
   /**
     * Generate pattern if the tree has only one single path
+    *
     * @param fpTree: The single path tree in which frequent itemsets are extracted
     * @return List of frequent itemset
     */
@@ -200,6 +203,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
   /**
     * Extract pattern from FPTree
+    *
     * @param fpTree The FPTree from which frequent patterns are extracted
     * @param itemset The current suffix of FPTree from which conditional base patterns are extracted
     * @param inputItem If given, only extract frequent patterns for the suffix starting inputItem
@@ -210,17 +214,24 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     if (this.fptree.hasSinglePath) {
       var fSets = generateFrequentFromSinglePath(fpTree, inputItem)
       if (fSets.nonEmpty) {
-        fSets.foreach {fItemset => fItemset.items = itemset.items ++ fItemset.items}
+        if (itemset != null) {
+          fSets.foreach {fItemset => fItemset.items = itemset.items ++ fItemset.items}
+        }
         frequentItemsets ++= fSets
       }
     }
     else {
-      fptree.headerTable.foreach {
 
+      //Update frequency of all item
+      fptree.headerTable.foreach {
         case (item, listFPTreeNode) => {
-          var itemFrequency: Long = 0
-          listFPTreeNode.foreach(itemFrequency += _.frequency)
-          item.frequency = itemFrequency
+          val itemFrequency = listFPTreeNode.head.item.frequency
+          listFPTreeNode.foreach(_.item.frequency = itemFrequency)
+        }
+      }
+
+      fptree.headerTable.foreach {
+        case (item, listFPTreeNode) => {
 
           if (item.frequency >= minCount && (inputItem == null || item.equals(inputItem))) {
             var currentItemset = new Itemset()

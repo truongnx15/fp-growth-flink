@@ -47,6 +47,9 @@ class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
           currentNode = child
           currentNode.frequency += item.count
         }
+
+        //add frequency of item to the first element in the header table
+        headerTable(item).head.item.frequency += item.count
       }
     }
   }
