@@ -28,6 +28,7 @@ object PFPGrowthExample {
     val minSupport = 3.0/5
 
     var pfp = new PFPGrowth(env, minSupport)
+    pfp.numPartition = 4
 
     //Read dataset
     val data = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)

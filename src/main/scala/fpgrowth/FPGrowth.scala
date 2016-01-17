@@ -149,7 +149,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     }
 
     //Extract the path to a list
-    while (currentNode != null && currentNode.frequency >= minCount) {
+    while (currentNode != null && currentNode.frequency >= minCount && localInputItem == null) {
 
       if (inputItem != null && currentNode.item.equals(inputItem)) {
         localInputItem = currentNode.item
@@ -171,7 +171,14 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
     val numItemsets: Long = 1L << path.length
 
-    for(i <- 1L to (numItemsets - 1)) {
+    //1 means choosing at least one element in the list
+    var startSubset = 1L
+    if (localInputItem != null) {
+      //in this case, it is possible to have empty subset because localInputItem will be added later
+      startSubset = 0L
+    }
+
+    for(i <- startSubset to (numItemsets - 1)) {
 
       var currentItemset = new Itemset()
       var minItemSupport = Long.MaxValue

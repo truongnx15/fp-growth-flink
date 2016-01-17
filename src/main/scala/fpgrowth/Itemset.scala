@@ -1,20 +1,20 @@
 package fpgrowth
 
 import scala.collection.immutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class Itemset(var items: ListBuffer[Item], var support: Long) extends Ordered[Itemset] {
+class Itemset(var items: ArrayBuffer[Item], var support: Long) extends Ordered[Itemset] {
 
   def this() = {
     this(null, 0)
-    this.items = new ListBuffer()
+    this.items = ArrayBuffer.empty[Item]
     this.support = 0
   }
 
   /**
     * @param items the items to set
     */
-  def setItems(items: ListBuffer[Item]) {
+  def setItems(items: ArrayBuffer[Item]) {
     this.items = items
   }
 

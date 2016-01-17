@@ -32,8 +32,12 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
   override def hashCode: Int = 47 * (47 + name.length.hashCode())
   
   override def compare(o: Item): Int = {
-    if (this.name != o.name)
-      this.rank compare o.rank
+    if (this.name != o.name) {
+      if (this.rank != o.rank) {
+        this.rank compare o.rank
+      }
+      this.name compare o.name
+    }
     else
       this.name compare o.name
   }

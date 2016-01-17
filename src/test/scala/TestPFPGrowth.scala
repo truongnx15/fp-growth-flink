@@ -12,12 +12,18 @@ import scala.util.Random
 
 class TestPFPGrowth  {
 
-  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2 ) //, 0.15)
-  val numItems = List[Int](10, 50, 70, 100, 150) //, 150)
-  val numTransactions = List[Int](20, 30, 1000, 2000, 3000) //, 5000)
+  val minSupport = List[Double](0.3, 0.2, 0.25, 0.15, 0.2, 0.15)
+  val numItems = List[Int](10, 50, 70, 100, 150, 150)
+  val numTransactions = List[Int](20, 30, 1000, 2000, 3000, 5000)
+
+  val maxBruteForceItems = 20
+  val maxLocalFPGrowthTransactions = 3000
+
   val itemDelimiter = " "
   val inputFolder = "testdata"
+
   var outputWriter: PrintWriter = _
+
 
   def generateTransactionFile(testNum: Int): Unit = {
     val random = Random
@@ -143,9 +149,12 @@ class TestPFPGrowth  {
     outputWriter.write(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
     outputWriter.write(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
-    //println(thisModel._2 + ": " + thisModel._1.toSet)
-    //println(thatModel._2 + ": " + thatModel._1.toSet)
-    //println(thisModel._1.toSet == thatModel._1.toSet)
+    print(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
+    print(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
+
+    println(thisModel._2 + ": " + thisModel._1.toSet)
+    println(thatModel._2 + ": " + thatModel._1.toSet)
+    println(thisModel._1.toSet == thatModel._1.toSet)
 
     assert(thisModel._1.size == thatModel._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatModel._2)
     assert(thisModel._1.toSet == thatModel._1.toSet, "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatModel._2)
@@ -230,12 +239,7 @@ class TestPFPGrowth  {
       //FLINK RUNNING
       val flinkModel = testSpeedFlink(testNum)
 
-
-      var startTime = System.currentTimeMillis()
-      //LOCAL FPGROWTH RUNNING
-      val localFPGrowthModel = testFPGrowthLocal(testNum)
-      outputWriter.write("TEST: " + testNum + " - LOCAL FPGROWTH: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
-      startTime = System.currentTimeMillis()
+      var localFPGrowthModel: ListBuffer[Itemset] = null
 
       //Extract frequentSet in Spark
       var frequentSetsSpark: ListBuffer[Set[String]] = new ListBuffer()
@@ -263,19 +267,27 @@ class TestPFPGrowth  {
       }
 
 
-      //Extract frequentSet in local FPGrowth
       var frequentSetsLocalFPGrowth: ListBuffer[Set[String]] = new ListBuffer()
-      localFPGrowthModel.foreach{
-        itemset => {
-          var currentFrequentSet: Set[String] = Set()
-          itemset.items.foreach { item => currentFrequentSet += item.name}
-          frequentSetsLocalFPGrowth += currentFrequentSet
+      if (numTransactions(testNum) <= maxLocalFPGrowthTransactions) {
+        var startTime = System.currentTimeMillis()
+        //LOCAL FPGROWTH RUNNING
+        val localFPGrowthModel = testFPGrowthLocal(testNum)
+        outputWriter.write("TEST: " + testNum + " - LOCAL FPGROWTH: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
+        //Extract frequentSet in local FPGrowth
+        localFPGrowthModel.foreach{
+          itemset => {
+            var currentFrequentSet: Set[String] = Set()
+            itemset.items.foreach { item => currentFrequentSet += item.name}
+            frequentSetsLocalFPGrowth += currentFrequentSet
+          }
         }
       }
 
-      if (numItems(testNum) <= 20) {
+      if (numItems(testNum) <= maxBruteForceItems) {
         //Run bruteforce model
+        var startTime = System.currentTimeMillis()
         val modelBruteForce = bruteForceFrequentItemset(testNum)
+        outputWriter.write("TEST: " + testNum + " - BRUTE FORCE: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
 
         var frequentSetsBruteForce: ListBuffer[Set[String]] = new ListBuffer()
         modelBruteForce.foreach {
@@ -287,8 +299,10 @@ class TestPFPGrowth  {
         compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsBruteForce, "BRUTE FORCE"))
       }
 
-      compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsSpark, "SPARK"))
-      compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
+      if (numItems(testNum) <= maxLocalFPGrowthTransactions) {
+        compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsSpark, "SPARK"))
+        compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
+      }
 
       compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
 
