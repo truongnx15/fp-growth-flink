@@ -203,11 +203,11 @@ class TestPFPGrowth  {
     //val testNum = 3
     val inputFileName = getInputFileName(testNum)
     val env = ExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(numPartition)
 
     var startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
-    pfp.numPartition = numPartition
     val flinkModel = pfp.run(transactionsFlink)
 
     outputWriter.write("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
