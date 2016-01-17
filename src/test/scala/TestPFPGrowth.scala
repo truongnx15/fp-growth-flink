@@ -149,12 +149,12 @@ class TestPFPGrowth  {
     outputWriter.write(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
     outputWriter.write(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
-    print(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
-    print(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
+    //print(s"Number of frequent itemsets  ${thisModel._2}: ${thisModel._1.size}" + "\n")
+    //print(s"Number of frequent itemsets  ${thatModel._2}: ${thatModel._1.size}" + "\n")
 
-    println(thisModel._2 + ": " + thisModel._1.toSet)
-    println(thatModel._2 + ": " + thatModel._1.toSet)
-    println(thisModel._1.toSet == thatModel._1.toSet)
+    //println(thisModel._2 + ": " + thisModel._1.toSet)
+    //println(thatModel._2 + ": " + thatModel._1.toSet)
+    //println(thisModel._1.toSet == thatModel._1.toSet)
 
     assert(thisModel._1.size == thatModel._1.size, "Number of frequent itemsets are different: " + thisModel._2 + " vs " + thatModel._2)
     assert(thisModel._1.toSet == thatModel._1.toSet, "Frequent itemsets of are different: " + thisModel._2 + " vs " + thatModel._2)
@@ -171,7 +171,7 @@ class TestPFPGrowth  {
   //@Test
   def testSpeedSpark(testNum: Int) = {
 
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[4]").set("spark.driver.allowMultipleContexts", "true")
     val sc = new SparkContext(conf)
