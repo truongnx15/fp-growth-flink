@@ -41,10 +41,25 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Long]
 
+    /*
+    val numItemParition = FList.size / numPartition
+    var currentPartition: Long = 0
+    var currentItem: Long = 0
+    FList.foreach(
+      x => {
+        gList += (x -> currentPartition)
+        currentItem += 1
+        if (currentItem % numItemParition == 0) {
+          currentPartition += 1
+        }
+      }
+    )
+    */
+
     var partitionCount: Long = 0
     FList.foreach(
       x => {
-        gList += (new Item(x.name, x.frequency, 1) -> (partitionCount % numPartition))
+        gList += (x -> (partitionCount % numPartition))
         partitionCount += 1
       }
     )
@@ -53,7 +68,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val frequentItemsets = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthflatMap(gList, minCount))
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(gList, minCount))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount))
 

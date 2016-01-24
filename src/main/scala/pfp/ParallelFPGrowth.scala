@@ -11,7 +11,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object ParallelFPGrowth {
-  class ParallelFPGrowthflatMap(val gList : mutable.HashMap[Item, Long], val minCount: Long) extends FlatMapFunction[Itemset, (Long, Itemset)] {
+  class ParallelFPGrowthFlatMap(val gList : mutable.HashMap[Item, Long], val minCount: Long) extends FlatMapFunction[Itemset, (Long, Itemset)] {
 
     override def flatMap(itemset: Itemset, collector: Collector[(Long, Itemset)]): Unit = {
 
@@ -32,9 +32,7 @@ object ParallelFPGrowth {
 
           val newItemset = new Itemset()
 
-          for(i <- 0 to j) {
-            newItemset.addItem(itemset.items(i))
-          }
+          newItemset.items = itemset.items.slice(0, j + 1)
 
           collector.collect((hashNumLong, newItemset))
         }

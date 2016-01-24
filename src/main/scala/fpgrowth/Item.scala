@@ -29,7 +29,7 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
     case _ => false
   }
   
-  override def hashCode: Int = 47 * (47 + name.length.hashCode())
+  override def hashCode: Int = name.length.hashCode()
   
   override def compare(o: Item): Int = {
     if (this.name != o.name) {

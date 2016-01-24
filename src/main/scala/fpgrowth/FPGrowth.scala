@@ -103,17 +103,17 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     val listNode = fptree.headerTable(item)
 
     listNode.foreach(
-      f = currentNode => {
+      currentNode => {
         var pathNode = currentNode.parent
         var itemset = new Itemset()
 
         while (!pathNode.isRoot) {
 
-          val newItem = new Item(pathNode.item.name, 0, currentNode.frequency)
+          itemset.addItem(new Item(pathNode.item.name, 0, currentNode.frequency))
 
-          if (pathNode.item.frequency >= minCount) {
-            itemset.addItem(newItem)
-          }
+          //if (pathNode.item.frequency >= minCount) {
+            //itemset.addItem(newItem)
+          //}
 
           pathNode = pathNode.parent
         }
@@ -230,12 +230,15 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     else {
 
       //Update frequency of all item
+
+      /*
       fptree.headerTable.foreach {
         case (item, listFPTreeNode) => {
           val itemFrequency = listFPTreeNode.head.item.frequency
           listFPTreeNode.foreach(_.item.frequency = itemFrequency)
         }
       }
+      */
 
       fptree.headerTable.foreach {
         case (item, listFPTreeNode) => {
