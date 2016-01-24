@@ -17,7 +17,7 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
     this(null, 0, 1)
     this.rank = frequency
   }
-  
+
   //Constructor when only item name given
   def this(name:String) = {
     this(name, 0, 1)
@@ -30,8 +30,9 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
   }
   
   override def hashCode: Int = name.length.hashCode()
-  
+
   override def compare(o: Item): Int = {
+    /*
     if (this.name != o.name) {
       if (this.rank != o.rank) {
         this.rank compare o.rank
@@ -40,6 +41,8 @@ class Item(var name: String, var frequency: Long, var count: Long) extends Seria
     }
     else
       this.name compare o.name
+    */
+    this.name compare o.name
   }
   
   override def toString: String = {

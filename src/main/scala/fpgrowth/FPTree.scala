@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 /**
   * FPGrowth tree in memory
   */
-class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
+class FPTree(var minCount: Long) {
 
   //Header table in FPGrowth
   var headerTable = mutable.HashMap.empty[Item, ListBuffer[FPTreeNode]]
@@ -22,9 +22,9 @@ class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
     * @param itemset a transaction to be added to current FPTree
     */
 
-  def addTransaction(itemset: Itemset): Unit = {
+  def addTransaction(itemset: Iterable[Item]): Unit = {
     var currentNode = root
-    itemset.items.foreach {
+    itemset.foreach {
       item => {
         val child = currentNode.children.getOrElse(item, null)
         if (child == null || !item.equals(child.item)) {
@@ -50,19 +50,6 @@ class FPTree(var itemsets: ListBuffer[Itemset], var minCount: Long) {
 
         //add frequency of item to the first element in the header table
         headerTable(item).head.item.frequency += item.count
-      }
-    }
-  }
-
-  /**
-    * Build the FPTree
-    */
-
-  def buildFPTree(): Unit = {
-    //Add each of the transaction to the tree
-    itemsets.foreach {
-      itemset => {
-        addTransaction(itemset)
       }
     }
   }
