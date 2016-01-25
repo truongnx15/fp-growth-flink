@@ -9,6 +9,10 @@ package fpgrowth
 
 class Item(var name: String, var frequency: Int) extends Serializable with Ordered[Item]{
 
+  def this() {
+    this(null, 0)
+  }
+
   override def equals(o: Any) = o match  {
     case o: Item => this.name == o.name
     case _ => false

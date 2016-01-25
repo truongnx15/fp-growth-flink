@@ -18,7 +18,7 @@ class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, v
   var order: Map[Item, Int] = null
   //Transactions are transformed to transactions of itemId(order of item in the original transaction if items are sorted in increasing
   //order of frequency
-  var ItemsetsId: ListBuffer[ListBuffer[Int]] = null
+  var itemsetsId: ListBuffer[ListBuffer[Int]] = null
   //Map between itemId(order of item) and item itself
   var itemIdItemMap: Map[Int, Item] = null
 
@@ -30,15 +30,13 @@ class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, v
       buildItemOrder()
     }
 
-    //Reorder item in transaction based on the order and filter non-empty frequent
-    itemsets = itemsets.map(_.sortWith(_.frequency > _.frequency).filter(_.frequency >= minCount))
-    ItemsetsId = itemsets.map(_.flatMap(order.get))
+    itemsetsId = itemsets.map(_.flatMap(order.get).sorted)
     itemIdItemMap = order.map(_.swap)
   }
 
-  if (ItemsetsId != null && ItemsetsId.nonEmpty) {
+  if (itemsetsId != null && itemsetsId.nonEmpty) {
     //Add each of the transaction to the tree
-    ItemsetsId.foreach {
+    itemsetsId.foreach {
       itemset => {
         fptree.addTransaction(itemset, 1)
       }
@@ -86,7 +84,10 @@ class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, v
     //Build order
     val items = tmpMap.map( item => {
       new Item(item._1.name, item._2)
-    }).toList
+    }).toList.filter(_.frequency >= minCount)
+
+    //filter non-frequent item
+    itemsets = itemsets.map(_.filter(_.frequency >= minCount))
 
     this.order = items.sortWith(_.frequency > _.frequency).zipWithIndex.toMap
   }
