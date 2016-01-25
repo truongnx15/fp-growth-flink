@@ -14,7 +14,7 @@ class FPTree(var minCount: Long) {
   var itemFrequencyTable = mutable.HashMap.empty[Int, Int]
 
   //Root of the FPTree
-  var root: FPTreeNode = new FPTreeNode(Int.MaxValue, 0, null)
+  var root = new FPTreeNode(Int.MinValue, 0, null)
 
   var hasSinglePath = true
 
@@ -49,8 +49,7 @@ class FPTree(var minCount: Long) {
           currentNode.frequency += itemsetFrequency
         }
 
-        var itemFrequency: Int = itemFrequencyTable.getOrElseUpdate(itemId, 0) + itemsetFrequency
-        //itemFrequency += itemsetFrequency
+        val itemFrequency = itemFrequencyTable.getOrElseUpdate(itemId, 0) + itemsetFrequency
         itemFrequencyTable += (itemId -> itemFrequency)
       }
     }

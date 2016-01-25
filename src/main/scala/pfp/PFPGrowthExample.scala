@@ -6,7 +6,7 @@ package pfp
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala.ExecutionEnvironment
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 object PFPGrowthExample {
 
@@ -29,7 +29,6 @@ object PFPGrowthExample {
     val minSupport = 0.15
 
     var pfp = new PFPGrowth(env, minSupport)
-    pfp.numPartition = 4
 
     val starTime = System.currentTimeMillis()
     //Read dataset

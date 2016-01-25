@@ -9,7 +9,7 @@ import org.apache.flink.api.scala._
 import fpgrowth.Item
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.{ListBuffer}
 
 /**
  * Class to run Parallel FPGrowth algorithm in flink
@@ -22,7 +22,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
 
-  def run(data: DataSet[ArrayBuffer[Item]]) = {
+  def run(data: DataSet[ListBuffer[Item]]) = {
 
     val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
@@ -34,44 +34,22 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       .filter(_.frequency >= minCount)
       .collect()
 
-
-
     val FList = unsortedList.sortWith(_.frequency > _ .frequency)
 
-
-    //STEP 3: Grouping items step
-
     //glist maps between item and its hashcode
-    val gList = mutable.HashMap.empty[Item, Int]
-
-    /*
-    val numItemParition = FList.size / numPartition
-    var currentPartition: Long = 0
-    var currentItem: Long = 0
-    FList.foreach(
-      x => {
-        gList += (x -> currentPartition)
-        currentItem += 1
-        if (currentItem % numItemParition == 0) {
-          currentPartition += 1
-        }
-      }
-    )
-    */
-
-    this.numPartition = 1
-
+    val gList = ListBuffer.empty[(Item, Int)]
 
     var partitionCount: Long = 0
     FList.foreach(
       x => {
-        gList += (x -> (partitionCount % numPartition).toInt)
+        gList += ((x , (partitionCount % numPartition).toInt))
         partitionCount += 1
       }
     )
 
-    val order = gList.keySet.zipWithIndex.toMap
+    val order = gList.toMap.keySet.zipWithIndex.toMap
     val idToGroupMap = mutable.HashMap.empty[Int, Int]
+    val idToItemMap = order.map(_.swap)
 
     gList.foreach(
       mapEntry => {
@@ -79,25 +57,23 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       }
     )
 
-    //val order = FList.zipWithIndex.toMap
-
     //STEP 4: Parallel FPGrowth: default null key is not necessary
-    val frequentItemsets = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order, gList, minCount))
+    val frequentItemIdsets = data
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(gList))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(idToGroupMap, minCount))
+      //Map back from itemId to real item
 
 
-    //STEP 5:
-   /*
-    val frequentItemsets: List[Itemset] = step4output
-      .flatMap(Aggregation.AggregationFlatMap)
-      .groupBy(0)
-      .reduceGroup(Aggregation.AggregationGroupReduce)
-      .collect()
-      .toList
-    */
+    var frequentItemsets = ListBuffer.empty[(ListBuffer[Item], Int)]
 
-    frequentItemsets.collect()
+    frequentItemIdsets.collect().foreach(
+      frequentIdSet => {
+        val itemset = frequentIdSet._1.flatMap(idToItemMap.get)
+        frequentItemsets += ((itemset, frequentIdSet._2))
+      }
+    )
+
+    frequentItemsets
   }
 }

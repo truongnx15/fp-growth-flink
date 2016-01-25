@@ -8,7 +8,7 @@ import org.apache.flink.util.Collector
 
 import fpgrowth.Item
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.{ListBuffer}
 
 //Object to make the ParallelCounting static
 object ParallelCounting {
@@ -19,8 +19,8 @@ object ParallelCounting {
    * These pairs are latter grouped to count occurrence for each distinct item
    */
   
-  def ParallelCountingFlatMap = new FlatMapFunction[ArrayBuffer[Item], (Item, Int)] {
-    override def flatMap(transaction: ArrayBuffer[Item], out: Collector[(Item, Int)]): Unit = {
+  def ParallelCountingFlatMap = new FlatMapFunction[ListBuffer[Item], (Item, Int)] {
+    override def flatMap(transaction: ListBuffer[Item], out: Collector[(Item, Int)]): Unit = {
       //For each item in the transaction, output pair (item, frequency). This exactly similar to wordCount
       transaction.foreach {
         x => {
