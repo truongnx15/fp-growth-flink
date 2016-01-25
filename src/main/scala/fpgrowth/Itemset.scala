@@ -3,27 +3,27 @@ package fpgrowth
 import scala.collection.immutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class Itemset(var items: ArrayBuffer[Item], var support: Long) extends Ordered[Itemset] {
+class Itemset[T](var items: ArrayBuffer[T], var support: Long) extends Ordered[Itemset[T]] {
 
   def this() = {
     this(null, 0)
-    this.items = ArrayBuffer.empty[Item]
+    this.items = ArrayBuffer.empty[T]
     this.support = 0
   }
 
   /**
     * @param items the items to set
     */
-  def setItems(items: ArrayBuffer[Item]) {
+  def setItems(items: ArrayBuffer[T]) {
     this.items = items
   }
 
   @throws(classOf[CloneNotSupportedException])
-  override def clone: Itemset = {
-    super.clone.asInstanceOf[Itemset]
+  override def clone: Itemset[T] = {
+    super.clone.asInstanceOf[Itemset[T]]
   }
 
-  def addItem(item: Item) {
+  def addItem(item: T) {
     items += item
   }
 
@@ -35,12 +35,7 @@ class Itemset(var items: ArrayBuffer[Item], var support: Long) extends Ordered[I
     string.toString
   }
 
-  override def compare(o: Itemset): Int = {
+  override def compare(o: Itemset[T]): Int = {
     this.support compare o.support
-  }
-
-  def sortItems(order: immutable.Map[Item, Int]): Unit = {
-    items.foreach(item => item.rank = order(item))
-    items = items.sortWith( _.rank < _.rank)
   }
 }

@@ -18,8 +18,8 @@ object ParallelCounting {
    * These pairs are latter grouped to count occurrence for each distinct item
    */
   
-  def ParallelCountingFlatMap = new FlatMapFunction[Itemset, (Item, Long)] {
-    override def flatMap(transaction: Itemset, out: Collector[(Item, Long)]): Unit = {
+  def ParallelCountingFlatMap = new FlatMapFunction[Itemset[Item], (Item, Long)] {
+    override def flatMap(transaction: Itemset[Item], out: Collector[(Item, Long)]): Unit = {
       //Retrieve the list of item in a transaction
       val itemset = transaction.items
       

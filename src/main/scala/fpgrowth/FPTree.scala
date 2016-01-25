@@ -10,10 +10,11 @@ import scala.collection.mutable.ListBuffer
 class FPTree(var minCount: Long) {
 
   //Header table in FPGrowth
-  var headerTable = mutable.HashMap.empty[Item, ListBuffer[FPTreeNode]]
+  var headerTable = mutable.HashMap.empty[Int, ListBuffer[FPTreeNode]]
+  var itemFrequencyTable = mutable.HashMap.empty[Int, Int]
 
   //Root of the FPTree
-  var root: FPTreeNode = new FPTreeNode(null, 0L, null)
+  var root: FPTreeNode = new FPTreeNode(Int.MaxValue, 0, null)
 
   var hasSinglePath = true
 
@@ -22,22 +23,22 @@ class FPTree(var minCount: Long) {
     * @param itemset a transaction to be added to current FPTree
     */
 
-  def addTransaction(itemset: Iterable[Item]): Unit = {
+  def addTransaction(itemset: Iterable[Int], itemsetFrequency: Int = 1): Unit = {
     var currentNode = root
     itemset.foreach {
-      item => {
-        val child = currentNode.children.getOrElse(item, null)
-        if (child == null || !item.equals(child.item)) {
+      itemId => {
+        val child = currentNode.children.getOrElse(itemId, null)
+        if (child == null || !itemId.equals(child.itemId)) {
           //We should create new child be cause there is no
 
-          val newNode = new FPTreeNode(item, item.count, currentNode )
+          val newNode = new FPTreeNode(itemId, itemsetFrequency, currentNode )
           //Add to the children of currentNode
-          currentNode.children += (item -> newNode)
+          currentNode.children += (itemId -> newNode)
           if (currentNode.children.size > 1) {
             hasSinglePath = false
           }
 
-          headerTable.getOrElseUpdate(item, ListBuffer[FPTreeNode]()).append(newNode)
+          headerTable.getOrElseUpdate(itemId, ListBuffer[FPTreeNode]()).append(newNode)
 
           //Update current node to new node
           currentNode = newNode
@@ -45,11 +46,14 @@ class FPTree(var minCount: Long) {
         else {
           //We should go down to the next node because we have common path
           currentNode = child
-          currentNode.frequency += item.count
+          currentNode.frequency += itemsetFrequency
         }
 
         //add frequency of item to the first element in the header table
-        headerTable(item).head.item.frequency += item.count
+        //headerTable(itemId).head.item.frequency += itemsetFrequency
+        var itemFrequency: Int = itemFrequencyTable.getOrElse(itemId, 0)
+        itemFrequency += itemsetFrequency
+        itemFrequencyTable += (itemId -> itemFrequency)
       }
     }
   }

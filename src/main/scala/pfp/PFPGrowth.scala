@@ -22,16 +22,19 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
 
-  def run(data: DataSet[Itemset]) = {
+  def run(data: DataSet[Itemset[Item]]) = {
+
+    val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
    //STEP 2: parallel counting step
     val unsortedList = data
       .flatMap(ParallelCounting.ParallelCountingFlatMap)
       .groupBy(0)
       .reduceGroup(ParallelCounting.ParallelCountingGroupReduce)
+      .filter(_.frequency >= minCount)
       .collect()
 
-    val minCount: Long = math.ceil(minSupport * data.count()).toLong
+
 
     val FList = unsortedList.sortWith(_.frequency > _ .frequency)
 
@@ -39,7 +42,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     //STEP 3: Grouping items step
 
     //glist maps between item and its hashcode
-    val gList = mutable.HashMap.empty[Item, Long]
+    val gList = mutable.HashMap.empty[Item, Int]
 
     /*
     val numItemParition = FList.size / numPartition
@@ -56,11 +59,23 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     )
     */
 
+    this.numPartition = 1
+
+
     var partitionCount: Long = 0
     FList.foreach(
       x => {
-        gList += (x -> (partitionCount % numPartition))
+        gList += (x -> (partitionCount % numPartition).toInt)
         partitionCount += 1
+      }
+    )
+
+    val order = gList.keySet.zipWithIndex.toMap
+    val idToGroupMap = mutable.HashMap.empty[Int, Int]
+
+    gList.foreach(
+      mapEntry => {
+        idToGroupMap += (order(mapEntry._1) -> mapEntry._2)
       }
     )
 
@@ -68,9 +83,9 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val frequentItemsets = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(gList, minCount))
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order, gList, minCount))
       .groupBy(0)
-      .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(gList, minCount))
+      .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(idToGroupMap, minCount))
 
 
     //STEP 5:

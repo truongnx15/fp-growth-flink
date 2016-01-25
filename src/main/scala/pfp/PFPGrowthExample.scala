@@ -17,6 +17,7 @@ object PFPGrowthExample {
     val env = ExecutionEnvironment.getExecutionEnvironment
     val itemDelimiter = " "
     val lineDelimiter = "\n"
+
     
     //Parse input parameter
     //var input: String = parameter.get("input")
@@ -25,18 +26,21 @@ object PFPGrowthExample {
     //Init PFPGrowth algorithm
 
     //Set minSupport to test
-    val minSupport = 3.0/5
+    val minSupport = 0.15
 
     var pfp = new PFPGrowth(env, minSupport)
     pfp.numPartition = 4
 
+    val starTime = System.currentTimeMillis()
     //Read dataset
-    val data = IOHelper.readInput(env, "sample_fpgrowth_local.txt", itemDelimiter)
+    val data = IOHelper.readInput(env, "testdata/transactions-3.txt", itemDelimiter)
 
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
 
-    frequentItemsets.foreach(println(_))
+    println("TIME: " + (System.currentTimeMillis() - starTime) / 1000.0)
+
+    //frequentItemsets.foreach(println(_))
     
     println(frequentItemsets.size)
   }

@@ -12,11 +12,11 @@ import scala.collection.{immutable, mutable}
   * @param minCount minimum occurrences to be considered
   * @param sorting whether the itemset should be sorted based on order of frequency
   */
-class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sorting: Boolean) {
+class FPGrowth(var itemsets: ListBuffer[Itemset[Int]], var minCount: Long, var sorting: Boolean) {
 
   var order: immutable.Map[Item, Int] = null
 
-  def this(itemsets: ListBuffer[Itemset], minCount: Long, order: immutable.Map[Item, Int], sorting: Boolean = true) = {
+  def this(itemsets: ListBuffer[Itemset[Int]], minCount: Long, order: immutable.Map[Item, Int], sorting: Boolean = true) = {
     this(itemsets, minCount, sorting)
     this.order = order
   }
@@ -27,18 +27,20 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     if (sorting) {
       if (order == null) {
         //Build the order of item from highest frequency to lowest
-        buildItemOrder()
+        //buildItemOrder()
       }
       //Reorder item in transaction based on the order
-      itemsets.foreach(_.sortItems(order))
-      itemsets.foreach{
-        itemset => {itemset.items = itemset.items.filter(_.frequency >= minCount)}
-      }
+      //itemsets.foreach(_.sortItems(order))
+      //itemsets.foreach{
+      //  itemset => {itemset.items = itemset.items.filter(_.frequency >= minCount)}
+      //}
     }
 
     //Init fptree
+
     fptree = new FPTree(minCount)
 
+    /*
     if (itemsets != null && itemsets.nonEmpty) {
       //Add each of the transaction to the tree
       itemsets.foreach {
@@ -47,12 +49,14 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
         }
       }
     }
+    */
   }
 
   /**
     * Update frequency of items in itemset
     */
 
+  /*
   def updateFrequency(frequentMap: mutable.HashMap[Item, Long]): Unit = {
     itemsets.foreach {
       itemset => {
@@ -66,10 +70,12 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
       }
     }
   }
+  */
 
   /**
     * We need to build the order of item for the tree
     */
+  /*
   def buildItemOrder(): Unit = {
     //Build the order to sort item
     val tmpMap = mutable.HashMap.empty[Item, Long]
@@ -94,37 +100,35 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
     this.order = items.sortWith(_.frequency > _.frequency).zipWithIndex.toMap
   }
+  */
 
   /**
     * Generate the conditional based patterns for one item in the header table of fpTree
     *
     * @param fpTree the tree from which conditional base patterns are extracted
-    * @param item the item for which the conditional base patterns are extracted
+    * @param itemId the itemId for which the conditional base patterns are extracted
     * @return list of conditional base patterns
     */
 
-  def generateConditionalBasePatterns(fpTree: FPTree, item: Item): FPGrowth = {
+  def generateConditionalBasePatterns(fpTree: FPTree, itemId: Int): FPGrowth = {
 
     val tmpFPGrowth = new FPGrowth(null, minCount, false)
 
     //Adjust frequent of item in conditional pattern to be as the same as item
-    val listNode = fptree.headerTable(item)
+    val listNode = fptree.headerTable(itemId)
 
     listNode.foreach(
       currentNode => {
         var pathNode = currentNode.parent
-        var itemset = List.empty[Item]
+        var itemset = List.empty[Int]
 
         while (!pathNode.isRoot) {
-
-          val newItem = new Item(pathNode.item.name, 0, currentNode.frequency)
-          itemset = newItem :: itemset
-
+          itemset = pathNode.itemId :: itemset
           pathNode = pathNode.parent
         }
 
         if (itemset.nonEmpty) {
-          tmpFPGrowth.fptree.addTransaction(itemset)
+          tmpFPGrowth.fptree.addTransaction(itemset, currentNode.frequency)
         }
       }
     )
@@ -141,26 +145,28 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     * @return List of frequent itemset
     */
 
-  def generateFrequentFromSinglePath(fpTree: FPTree, inputItem: Item = null): ListBuffer[Itemset] = {
-    var frequentItemsets = new ListBuffer[Itemset]()
+  def generateFrequentFromSinglePath(fpTree: FPTree, inputItemId: Int = Int.MaxValue): ListBuffer[Itemset[Int]] = {
+    var frequentItemsets = new ListBuffer[Itemset[Int]]()
 
-    var path = new ListBuffer[Item]
+    var path = new ListBuffer[FPTreeNode]
 
-    var localInputItem:Item = null
+    var localInputItemId: Int = Int.MaxValue
+    var localInputItemIdFrequency = Int.MaxValue
 
     var currentNode: FPTreeNode = null
     fpTree.root.children.foreach {
-      case (item: Item, fpTreeNode: FPTreeNode) => currentNode = fpTreeNode
+      case (item: Int, fpTreeNode: FPTreeNode) => currentNode = fpTreeNode
     }
 
     //Extract the path to a list
-    while (currentNode != null && currentNode.frequency >= minCount && localInputItem == null) {
+    while (currentNode != null && currentNode.frequency >= minCount && localInputItemId == Int.MaxValue) {
 
-      if (inputItem != null && currentNode.item.equals(inputItem)) {
-        localInputItem = currentNode.item
+      if (inputItemId != Int.MaxValue && currentNode.itemId.equals(inputItemId)) {
+        localInputItemId = currentNode.itemId
+        localInputItemIdFrequency = currentNode.frequency
       }
       else {
-        path += new Item(currentNode.item.name, currentNode.frequency, currentNode.frequency)
+        path += currentNode
       }
       var nextNode: FPTreeNode = null
       currentNode.children.foreach {
@@ -170,7 +176,7 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     }
 
     //Not found any itemset that contains inputItem
-    if (inputItem != null && localInputItem == null) {
+    if (inputItemId != Int.MaxValue && localInputItemId == Int.MaxValue) {
       return frequentItemsets
     }
 
@@ -178,35 +184,34 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
 
     //1 means choosing at least one element in the list
     var startSubset = 1L
-    if (localInputItem != null) {
-      //in this case, it is possible to have empty subset because localInputItem will be added later
+    if (localInputItemId != Int.MaxValue) {
+      //in this case, it is possible to have empty subset because localInputItemId will be added later
       startSubset = 0L
     }
 
     for(i <- startSubset to (numItemsets - 1)) {
 
-      var currentItemset = new Itemset()
+      var currentItemset = new Itemset[Int]()
       var minItemSupport = Long.MaxValue
 
       for(j<- path.indices) {
         //bit j of i
         if (((i >> j) & 1) == 1) {
           // if bit j of i == 1 => get item j from path
-          currentItemset.addItem(path(j))
+          currentItemset.addItem(path(j).itemId)
           minItemSupport = math.min(minItemSupport, path(j).frequency)
         }
       }
       //Set support of the current itemset to the smallest of item
       currentItemset.support = minItemSupport
 
-      if (inputItem != null) {
-        currentItemset.support = math.min(currentItemset.support, localInputItem.frequency)
-        currentItemset.addItem(localInputItem)
+      if (inputItemId != Int.MaxValue) {
+        currentItemset.support = math.min(currentItemset.support, localInputItemIdFrequency)
+        currentItemset.addItem(localInputItemId)
       }
 
       //output current support
       frequentItemsets += currentItemset
-
     }
 
     //Return frequent itemset
@@ -221,8 +226,8 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
     * @param inputItem If given, only extract frequent patterns for the suffix starting inputItem
     * @return List of Itemsets as frequent itemsets
     */
-  def extractPattern(fpTree: FPTree, itemset: Itemset, inputItem: Item = null): ListBuffer[Itemset] = {
-    var frequentItemsets = new ListBuffer[Itemset]()
+  def extractPattern(fpTree: FPTree, itemset: Itemset[Int], inputItem: Int = Int.MaxValue): ListBuffer[Itemset[Int]] = {
+    var frequentItemsets = new ListBuffer[Itemset[Int]]()
     if (this.fptree.hasSinglePath) {
       var fSets = generateFrequentFromSinglePath(fpTree, inputItem)
       if (fSets.nonEmpty) {
@@ -246,34 +251,30 @@ class FPGrowth(var itemsets: ListBuffer[Itemset], var minCount: Long, var sortin
       */
 
       fptree.headerTable.foreach {
-        case (item, listFPTreeNode) => {
+        case (itemId, listFPTreeNode) => {
 
-          if ((inputItem == null || item.equals(inputItem)) && item.frequency >= minCount) {
-            var currentItemset = new Itemset()
-            currentItemset.addItem(item)
-            currentItemset.support = item.frequency
-            if (itemset != null) {
-              currentItemset.items = itemset.items ++ currentItemset.items
-            }
+          if ((inputItem == Int.MaxValue || itemId.equals(inputItem))) {
 
-            frequentItemsets += currentItemset
+            val itemFrequency = fptree.itemFrequencyTable(itemId)
 
-            /*
-            val conditionalPatterns = generateConditionalBasePatterns(fptree, item)
-            if (conditionalPatterns.nonEmpty) {
-              val tmpFPGrowth = new FPGrowth(conditionalPatterns, minCount, false)
-              var fSets: ListBuffer[Itemset] = tmpFPGrowth.extractPattern(tmpFPGrowth.fptree, currentItemset)
-              if (fSets.nonEmpty) {
-                frequentItemsets ++= fSets
+            if (itemFrequency >= minCount) {
+              var currentItemset = new Itemset[Int]()
+
+              currentItemset.addItem(itemId)
+              currentItemset.support = itemFrequency
+
+              if (itemset != null) {
+                currentItemset.items = itemset.items ++ currentItemset.items
               }
-            }
-            */
 
-            val tmpFPGrowth = generateConditionalBasePatterns(fptree, item)
-            if (tmpFPGrowth.fptree.headerTable.nonEmpty) {
-              var fSets: ListBuffer[Itemset] = tmpFPGrowth.extractPattern(tmpFPGrowth.fptree, currentItemset)
-              if (fSets.nonEmpty) {
-                frequentItemsets ++= fSets
+              frequentItemsets += currentItemset
+
+              val tmpFPGrowth = generateConditionalBasePatterns(fptree, itemId)
+              if (tmpFPGrowth.fptree.headerTable.nonEmpty) {
+                var fSets: ListBuffer[Itemset[Int]] = tmpFPGrowth.extractPattern(tmpFPGrowth.fptree, currentItemset)
+                if (fSets.nonEmpty) {
+                  frequentItemsets ++= fSets
+                }
               }
             }
           }
