@@ -63,6 +63,7 @@ class TestPFPGrowth  {
   def bruteForceFrequentItemset(testNum: Int): ListBuffer[(Set[String], Long)] = {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
+    env.setParallelism(1)
     val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val minCount = math.ceil(minSupport(testNum) * transactions.count()).toInt
 
