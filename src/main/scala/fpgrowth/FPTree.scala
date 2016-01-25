@@ -49,10 +49,8 @@ class FPTree(var minCount: Long) {
           currentNode.frequency += itemsetFrequency
         }
 
-        //add frequency of item to the first element in the header table
-        //headerTable(itemId).head.item.frequency += itemsetFrequency
-        var itemFrequency: Int = itemFrequencyTable.getOrElse(itemId, 0)
-        itemFrequency += itemsetFrequency
+        var itemFrequency: Int = itemFrequencyTable.getOrElseUpdate(itemId, 0) + itemsetFrequency
+        //itemFrequency += itemsetFrequency
         itemFrequencyTable += (itemId -> itemFrequency)
       }
     }

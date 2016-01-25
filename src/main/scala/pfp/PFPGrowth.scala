@@ -7,9 +7,9 @@ import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.api.scala._
 
 import fpgrowth.Item
-import fpgrowth.Itemset
 
 import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Class to run Parallel FPGrowth algorithm in flink
@@ -22,7 +22,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
 
-  def run(data: DataSet[Itemset[Item]]) = {
+  def run(data: DataSet[ArrayBuffer[Item]]) = {
 
     val minCount: Long = math.ceil(minSupport * data.count()).toLong
 

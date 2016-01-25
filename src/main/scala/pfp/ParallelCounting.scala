@@ -7,7 +7,8 @@ import org.apache.flink.api.common.functions.GroupReduceFunction
 import org.apache.flink.util.Collector
 
 import fpgrowth.Item
-import fpgrowth.Itemset
+
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 //Object to make the ParallelCounting static
 object ParallelCounting {
@@ -18,25 +19,22 @@ object ParallelCounting {
    * These pairs are latter grouped to count occurrence for each distinct item
    */
   
-  def ParallelCountingFlatMap = new FlatMapFunction[Itemset[Item], (Item, Long)] {
-    override def flatMap(transaction: Itemset[Item], out: Collector[(Item, Long)]): Unit = {
-      //Retrieve the list of item in a transaction
-      val itemset = transaction.items
-      
-      //For each item in the transaction, output pair (item, occurrence[1 by default])
-      itemset.foreach {
+  def ParallelCountingFlatMap = new FlatMapFunction[ArrayBuffer[Item], (Item, Int)] {
+    override def flatMap(transaction: ArrayBuffer[Item], out: Collector[(Item, Int)]): Unit = {
+      //For each item in the transaction, output pair (item, frequency). This exactly similar to wordCount
+      transaction.foreach {
         x => {
-          out.collect((x, 1L))
+          out.collect((x, 1))
         }
       }
     }
   }
 
-  def ParallelCountingGroupReduce = new GroupReduceFunction[(Item, Long), Item] {
-    override def reduce(items: java.lang.Iterable[(Item, Long)], out: Collector[Item]): Unit = {
+  def ParallelCountingGroupReduce = new GroupReduceFunction[(Item, Int), Item] {
+    override def reduce(items: java.lang.Iterable[(Item, Int)], out: Collector[Item]): Unit = {
       
       //Temporary variable before returning the final result
-      var sum = 0L
+      var sum = 0
       var item: Item = null
       
       //Loop through the group and sum number of occurrences for the item
