@@ -26,6 +26,8 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
+    env.setParallelism(numPartition)
+
    //STEP 2: parallel counting step
     val unsortedList = data
       .flatMap(ParallelCounting.ParallelCountingFlatMap)
@@ -37,17 +39,17 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     val FList = unsortedList.sortWith(_.frequency > _ .frequency)
 
     //glist maps between item and its hashcode
-    val gList = ListBuffer.empty[(Item, Int)]
+    val gList = mutable.HashMap.empty[Item, Int]
 
     var partitionCount: Long = 0
     FList.foreach(
       x => {
-        gList += ((x , (partitionCount % numPartition).toInt))
+        gList += ((x -> (partitionCount % numPartition).toInt))
         partitionCount += 1
       }
     )
 
-    val order = gList.toMap.keySet.zipWithIndex.toMap
+    val order = gList.keySet.zipWithIndex.toMap
     val idToGroupMap = mutable.HashMap.empty[Int, Int]
     val idToItemMap = order.map(_.swap)
 
@@ -57,9 +59,12 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       }
     )
 
+    //do not need gList and FList any more
+    gList.clear()
+
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val frequentItemIdsets = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(gList))
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(idToGroupMap, minCount))
       //Map back from itemId to real item

@@ -13,20 +13,19 @@ object LocalFPGrowth {
     //Employ flink and FPGrowth to read data
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, "sample_fpgrowth_local_full.txt", " ")
-    val minCount: Long = math.ceil(3.0/5 * transactions.count()).toLong
+    val transactions = IOHelper.readInput(env, "T40I10D100K.dat", " ")
+    val minCount: Long = math.ceil(5.0/100 * transactions.count()).toLong
 
-    //convert DataSet to ListBuffer
-    var inputTransactions =  ListBuffer.empty[ListBuffer[Item]]
-    transactions.collect().flatMap(inputTransactions += _)
+    val starTime = System.currentTimeMillis()
 
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting)
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions.collect().toList, minCount, sorting)
 
     //Result result
     val result = fpGrowthLocal.getFrequentItemsets()
     println("LOCAL FPGROWTH: " + result.size)
+    println("TIME: " + (System.currentTimeMillis() - starTime) / 1000.0)
     //result.foreach(println(_))
   }
 }

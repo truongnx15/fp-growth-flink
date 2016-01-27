@@ -16,22 +16,13 @@ object ParallelFPGrowth {
     * Mapper in step4. The idea is to generate independent conditional based itemset. Each itemset has its own order based on frequency
     * Item with highest frequency has order 0, Item with second frequency has order 1 .....
     * From now on, item is represented by their order(called ItemId). An itemset is a list of itemId
+    *
     * => Sorting by frequency is sorting itemset itemId
     * @param gList
     */
-  class ParallelFPGrowthFlatMap(val gList: ListBuffer[(Item, Int)]) extends FlatMapFunction[ListBuffer[Item], (Int, ListBuffer[Int])] {
+  class ParallelFPGrowthFlatMap(val idToGroupMap: mutable.HashMap[Int, Int], val order: Map[Item, Int]) extends FlatMapFunction[ListBuffer[Item], (Int, ListBuffer[Int])] {
 
     override def flatMap(itemset: ListBuffer[Item], collector: Collector[(Int, ListBuffer[Int])]): Unit = {
-
-      val order = gList.toMap.keySet.zipWithIndex.toMap
-      val idToGroupMap = mutable.HashMap.empty[Int, Int]
-
-      //Recompute it instead of passing to mapper to reduce overhead through network
-      gList.foreach(
-        mapEntry => {
-          idToGroupMap += (order(mapEntry._1) -> mapEntry._2)
-        }
-      )
 
       //Check if the current group has been processed
       var outputGroup = Set[Int]()
@@ -52,9 +43,7 @@ object ParallelFPGrowth {
 
   class ParallelFPGrowthGroupReduce(val idToGroupMap: mutable.HashMap[Int, Int], val minCount: Long) extends GroupReduceFunction[(Int, ListBuffer[Int]), (ListBuffer[Int], Int)] {
     override def reduce(iterable: Iterable[(Int, ListBuffer[Int])], collector: Collector[(ListBuffer[Int], Int)]): Unit = {
-
       var groupId: Long = 0
-
       val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(null, minCount, false)
 
       iterable.foreach(

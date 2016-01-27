@@ -129,13 +129,9 @@ class TestPFPGrowth  {
     val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
     val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
 
-    //convert DataSet to ListBuffer
-    var inputTransactions =  ListBuffer.empty[ListBuffer[Item]]
-    transactions.collect().flatMap(inputTransactions += _)
-
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(inputTransactions, minCount, sorting)
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions.collect().toList, minCount, sorting)
 
     //Result result
     fpGrowthLocal.getFrequentItemsets()
@@ -171,12 +167,12 @@ class TestPFPGrowth  {
     inputFolder + "/transactions-" + testNum + "-result.txt"
   }
 
-  //@Test
+  @Test
   def testSpeedSpark(): Unit = {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
-    val testNum = 3
+    val testNum = 5
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
@@ -223,9 +219,9 @@ class TestPFPGrowth  {
     frequentSet
   }
 
-  //@Test
+  @Test
   def testSpeedFlink(): Unit = {
-    val testNum = 3
+    val testNum = 5
     val inputFileName = getInputFileName(testNum)
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(numPartition)

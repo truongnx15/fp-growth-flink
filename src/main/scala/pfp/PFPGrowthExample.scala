@@ -26,22 +26,22 @@ object PFPGrowthExample {
     //Init PFPGrowth algorithm
 
     //Set minSupport to test
-    val minSupport = 3.0/5
+    val minSupport = 5.0/100
 
     val starTime = System.currentTimeMillis()
 
     var pfp = new PFPGrowth(env, minSupport)
 
-
     //Read dataset
-    val data = IOHelper.readInput(env, "sample_fpgrowth_local_full.txt", itemDelimiter)
+    val data = IOHelper.readInput(env, "T40I10D100K.dat", itemDelimiter)
+    println("DATA: " + data.count())
 
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
 
     println("TIME: " + (System.currentTimeMillis() - starTime) / 1000.0)
 
-    frequentItemsets.foreach(println(_))
+    //frequentItemsets.foreach(println(_))
     
     println(frequentItemsets.size)
   }

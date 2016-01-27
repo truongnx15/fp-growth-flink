@@ -10,8 +10,7 @@ import scala.collection.mutable.ListBuffer
 class FPTree(var minCount: Long) {
 
   //Header table in FPGrowth
-  var headerTable = mutable.HashMap.empty[Int, ListBuffer[FPTreeNode]]
-  var itemFrequencyTable = mutable.HashMap.empty[Int, Int]
+  var headerTable = mutable.HashMap.empty[Int, FPHeaderItem]
 
   //Root of the FPTree
   var root = new FPTreeNode(Int.MinValue, 0, null)
@@ -27,6 +26,7 @@ class FPTree(var minCount: Long) {
     var currentNode = root
     itemset.foreach {
       itemId => {
+        val headerTableItem = headerTable.getOrElseUpdate(itemId, new FPHeaderItem)
         val child = currentNode.children.getOrElse(itemId, null)
         if (child == null || !itemId.equals(child.itemId)) {
           //We should create new child be cause there is no
@@ -38,8 +38,7 @@ class FPTree(var minCount: Long) {
             hasSinglePath = false
           }
 
-          headerTable.getOrElseUpdate(itemId, ListBuffer[FPTreeNode]()).append(newNode)
-
+          headerTableItem.nodes += newNode
           //Update current node to new node
           currentNode = newNode
         }
@@ -49,8 +48,7 @@ class FPTree(var minCount: Long) {
           currentNode.frequency += itemsetFrequency
         }
 
-        val itemFrequency = itemFrequencyTable.getOrElseUpdate(itemId, 0) + itemsetFrequency
-        itemFrequencyTable += (itemId -> itemFrequency)
+        headerTableItem.count += itemsetFrequency
       }
     }
   }
@@ -63,7 +61,7 @@ class FPTree(var minCount: Long) {
   def printHeaderTable() : Unit = {
     headerTable.foreach {
       case (item, listFPTreeNode) =>
-        listFPTreeNode.foreach {
+        listFPTreeNode.nodes.foreach {
           node => print(node + " (P: " + node.parent + ") ")
         }
         println()

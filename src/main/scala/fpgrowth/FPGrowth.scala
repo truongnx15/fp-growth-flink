@@ -12,13 +12,13 @@ import scala.collection.mutable.ListBuffer
   * @param minCount minimum occurrences to be considered
   * @param sorting whether the itemset should be sorted based on order of frequency
   */
-class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, var sorting: Boolean) {
+class FPGrowth(var itemsets: List[ListBuffer[Item]], var minCount: Long, var sorting: Boolean) {
 
   //This is for local FPGrowth if someone wants to run FPGrowth in local
   var order: Map[Item, Int] = null
   //Transactions are transformed to transactions of itemId(order of item in the original transaction if items are sorted in increasing
   //order of frequency
-  var itemsetsId: ListBuffer[ListBuffer[Int]] = null
+  var itemsetsId: List[ListBuffer[Int]] = null
   //Map between itemId(order of item) and item itself
   var itemIdItemMap: Map[Int, Item] = null
 
@@ -105,9 +105,9 @@ class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, v
     val tmpFPGrowth = new FPGrowth(null, minCount, false)
 
     //Adjust frequent of item in conditional pattern to be as the same as item
-    val listNode = fptree.headerTable(itemId)
+    val headerTableItem = fptree.headerTable(itemId)
 
-    listNode.foreach(
+    headerTableItem.nodes.foreach(
       currentNode => {
         var pathNode = currentNode.parent
         var itemset = List.empty[Int]
@@ -231,22 +231,20 @@ class FPGrowth(var itemsets: ListBuffer[ListBuffer[Item]], var minCount: Long, v
     }
     else {
       fptree.headerTable.foreach {
-        case (itemId, listFPTreeNode) => {
+        case (itemId, headerTableItem) => {
 
           if (inputItem == Int.MinValue || itemId.equals(inputItem)) {
 
-            val itemFrequency = fptree.itemFrequencyTable(itemId)
-
-            if (itemFrequency >= minCount) {
+            if (headerTableItem.count >= minCount) {
               var currentItemset = ListBuffer.empty[Int]
 
               currentItemset += itemId
 
               if (itemset != null) {
-                currentItemset = itemset ++ currentItemset
+                currentItemset ++= itemset
               }
 
-              frequentItemsets += ((currentItemset, itemFrequency))
+              frequentItemsets += ((currentItemset, headerTableItem.count))
 
               val tmpFPGrowth = generateConditionalBasePatterns(fptree, itemId)
               if (tmpFPGrowth.fptree.headerTable.nonEmpty) {
