@@ -9,7 +9,7 @@ import org.apache.flink.api.scala._
 import fpgrowth.Item
 
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer}
+import scala.collection.mutable.ListBuffer
 
 /**
  * Class to run Parallel FPGrowth algorithm in flink
@@ -36,7 +36,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       .filter(_.frequency >= minCount)
       .collect()
 
-    val FList = unsortedList.sortWith(_.frequency > _ .frequency)
+    var FList = unsortedList.sortWith(_.frequency > _ .frequency)
 
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Int]
@@ -44,7 +44,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     var partitionCount: Long = 0
     FList.foreach(
       x => {
-        gList += ((x -> (partitionCount % numPartition).toInt))
+        gList += (x -> (partitionCount % numPartition).toInt)
         partitionCount += 1
       }
     )
@@ -61,6 +61,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     //do not need gList and FList any more
     gList.clear()
+    FList = null
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary
     val frequentItemIdsets = data

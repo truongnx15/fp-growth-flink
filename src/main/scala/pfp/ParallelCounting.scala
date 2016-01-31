@@ -8,7 +8,7 @@ import org.apache.flink.util.Collector
 
 import fpgrowth.Item
 
-import scala.collection.mutable.{ListBuffer}
+import scala.collection.mutable.ListBuffer
 
 //Object to make the ParallelCounting static
 object ParallelCounting {

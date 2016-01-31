@@ -1,31 +1,37 @@
 package pfp
 
-import fpgrowth.{FPGrowth => FPGrowthLocal, Item}
-import org.apache.flink.api.scala.ExecutionEnvironment
+import fpgrowth.{FPGrowth => FPGrowthLocal}
+import org.apache.flink.api.java.utils.ParameterTool
 
-import scala.collection.mutable.ListBuffer
-
-/**
-  * Created by Xuan Truong on 25-Jan-16.
-  */
 object LocalFPGrowth {
   def main(args: Array[String]): Unit = {
-    //Employ flink and FPGrowth to read data
-    val env = ExecutionEnvironment.getExecutionEnvironment
-    env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, "T40I10D100K.dat", " ")
-    val minCount: Long = math.ceil(5.0/100 * transactions.count()).toLong
+
+    println("STARTING LOCAL FPGROWTH")
+
+    val parameter = ParameterTool.fromArgs(args)
+    val itemDelimiter = " "
+
+    //Parse input parameter
+    val input = parameter.get("input")
+    val minSupport = parameter.get("support")
+
+    if (input == null || input == "" || minSupport == null) {
+      println("Please indicate input file and support: --input inputFile --support minSupport")
+      return
+    }
+
+    val transactions = IOHelper.readInput(input, itemDelimiter)
+    val minCount: Long = math.ceil(minSupport.toDouble * transactions.size).toLong
 
     val starTime = System.currentTimeMillis()
 
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions.collect().toList, minCount, sorting)
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, sorting)
 
     //Result result
     val result = fpGrowthLocal.getFrequentItemsets()
-    println("LOCAL FPGROWTH: " + result.size)
     println("TIME: " + (System.currentTimeMillis() - starTime) / 1000.0)
-    //result.foreach(println(_))
+    println("LOCAL FPGROWTH: " + result.size)
   }
 }

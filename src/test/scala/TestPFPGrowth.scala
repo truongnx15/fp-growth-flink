@@ -167,11 +167,11 @@ class TestPFPGrowth  {
     inputFolder + "/transactions-" + testNum + "-result.txt"
   }
 
-  @Test
+  //@Test
   def testSpeedSpark(): Unit = {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     val testNum = 5
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
     val sc = new SparkContext(conf)
@@ -197,7 +197,7 @@ class TestPFPGrowth  {
   def testSpeedSpark(testNum: Int) = {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
     val sc = new SparkContext(conf)
@@ -219,7 +219,7 @@ class TestPFPGrowth  {
     frequentSet
   }
 
-  @Test
+  //@Test
   def testSpeedFlink(): Unit = {
     val testNum = 5
     val inputFileName = getInputFileName(testNum)
@@ -257,7 +257,8 @@ class TestPFPGrowth  {
   @Test
   def testWithSpark(): Unit = {
 
-    for(testNum: Int <- minSupport.indices) {
+    //for(testNum: Int <- minSupport.indices) {
+    for(testNum: Int <- (0 to 5)) {
 
       outputWriter = new PrintWriter( getOutputFileName(testNum) , "UTF-8")
 

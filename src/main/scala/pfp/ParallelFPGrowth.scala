@@ -16,9 +16,9 @@ object ParallelFPGrowth {
     * Mapper in step4. The idea is to generate independent conditional based itemset. Each itemset has its own order based on frequency
     * Item with highest frequency has order 0, Item with second frequency has order 1 .....
     * From now on, item is represented by their order(called ItemId). An itemset is a list of itemId
-    *
     * => Sorting by frequency is sorting itemset itemId
-    * @param gList
+    * @param idToGroupMap The map from id of item to item's group
+    * @param order The map from Item to its order(id)
     */
   class ParallelFPGrowthFlatMap(val idToGroupMap: mutable.HashMap[Int, Int], val order: Map[Item, Int]) extends FlatMapFunction[ListBuffer[Item], (Int, ListBuffer[Int])] {
 
