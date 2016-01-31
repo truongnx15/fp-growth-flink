@@ -257,8 +257,7 @@ class TestPFPGrowth  {
   @Test
   def testWithSpark(): Unit = {
 
-    //for(testNum: Int <- minSupport.indices) {
-    for(testNum: Int <- (0 to 5)) {
+    for(testNum: Int <- minSupport.indices) {
 
       outputWriter = new PrintWriter( getOutputFileName(testNum) , "UTF-8")
 
