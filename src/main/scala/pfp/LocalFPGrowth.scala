@@ -1,19 +1,19 @@
 package pfp
 
 import fpgrowth.{FPGrowth => FPGrowthLocal}
-import org.apache.flink.api.java.utils.ParameterTool
+import helper.{IOHelper, ParamHelper}
 
 object LocalFPGrowth {
   def main(args: Array[String]): Unit = {
 
     println("STARTING LOCAL FPGROWTH")
 
-    val parameter = ParameterTool.fromArgs(args)
+    val parameter = ParamHelper.parseArguments(args)
     val itemDelimiter = " "
 
     //Parse input parameter
-    val input = parameter.get("input")
-    val minSupport = parameter.get("support")
+    val input = parameter.getOptionValue("input")
+    val minSupport = parameter.getOptionValue("support")
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")

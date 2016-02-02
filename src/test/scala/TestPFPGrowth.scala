@@ -1,11 +1,12 @@
 import java.io.PrintWriter
 
 import fpgrowth.{FPGrowth => FPGrowthLocal, Item}
+import helper.IOHelper
 import org.apache.flink.api.scala._
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.{SparkConf, SparkContext}
 import org.junit._
-import pfp.{IOHelper, PFPGrowth, ParallelCounting}
+import pfp.{PFPGrowth, ParallelCounting}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
@@ -139,6 +140,7 @@ class TestPFPGrowth  {
 
   /**
     * Compare two model
+ *
     * @param thisModel One model to compare
     * @param thatModel The other model to compare
     */

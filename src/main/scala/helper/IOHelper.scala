@@ -1,12 +1,12 @@
-package pfp
+package helper
 
 import fpgrowth.Item
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.scala.{DataSet, ExecutionEnvironment, _}
 import org.apache.flink.util.Collector
-import scala.io.Source
 
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 object IOHelper {
   /**

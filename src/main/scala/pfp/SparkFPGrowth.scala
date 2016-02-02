@@ -1,5 +1,6 @@
 package pfp
 
+import helper.ParamHelper
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.{SparkContext, SparkConf}
@@ -10,12 +11,12 @@ object SparkFPGrowth {
     println("STARTING FPGROWTH IN SPARK")
 
     //Global variables for Flink and parameter parser
-    val parameter = ParameterTool.fromArgs(args)
+    val parameter = ParamHelper.parseArguments(args)
     val itemDelimiter = " "
 
     //Parse input parameter
-    val input = parameter.get("input")
-    val minSupport = parameter.get("support")
+    val input = parameter.getOptionValue("input")
+    val minSupport = parameter.getOptionValue("support")
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
@@ -23,8 +24,7 @@ object SparkFPGrowth {
     }
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
-    val conf = new SparkConf().setAppName("SPARK PFPGrowth").setMaster("local[*]")
+    val conf = new SparkConf().setAppName("SPARK PFPGrowth")
     val sc = new SparkContext(conf)
 
     val startTime: Long = System.currentTimeMillis()
