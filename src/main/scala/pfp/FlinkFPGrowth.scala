@@ -3,7 +3,7 @@
 package pfp
 
 
-import helper.IOHelper
+import helper.IOHelperFlink
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala.ExecutionEnvironment
 
@@ -22,6 +22,8 @@ object FlinkFPGrowth {
     val input = parameter.get("input")
     val minSupport = parameter.get("support")
 
+    println("input: " + input + " support: " + minSupport)
+
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
       return
@@ -32,7 +34,7 @@ object FlinkFPGrowth {
     val pfp = new PFPGrowth(env, minSupport.toDouble)
 
     //Read dataset
-    val data = IOHelper.readInput(env, input, itemDelimiter)
+    val data = IOHelperFlink.readInput(env, input, itemDelimiter)
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
 

@@ -12,8 +12,10 @@ object LocalFPGrowth {
     val itemDelimiter = " "
 
     //Parse input parameter
-    val input = parameter.getOptionValue("input")
-    val minSupport = parameter.getOptionValue("support")
+    val input = parameter.getOrElse("--input", null)
+    val minSupport = parameter.getOrElse("--support", null)
+
+    println("input: " + input + " support: " + minSupport)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")

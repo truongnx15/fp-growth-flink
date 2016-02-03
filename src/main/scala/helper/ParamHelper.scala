@@ -1,14 +1,26 @@
 package helper
 
-import org.apache.commons.cli._
+import scala.collection.mutable.HashMap
 
 object ParamHelper {
-  val options = new Options()
-  options.addOption("i", "input", true, "Path to the input file")
-  options.addOption("s", "support", true, "Min support")
 
-  def parseArguments(args: Array[String]): CommandLine = {
-    new DefaultParser().parse(options, args)
+  val requiredParams = List("--input" , "--support")
+
+  def parseArguments(args: Array[String]): HashMap[String, String] = {
+    val paramValues = HashMap[String, String]()
+
+    //Simple parse argument
+    var index = 0
+    while (index < args.length) {
+      val argument = args(index).toLowerCase.trim
+      if (requiredParams.contains(argument)) {
+        val paramValue = args(index + 1).trim
+        paramValues += (argument -> paramValue)
+        index += 1
+      }
+      index += 1
+    }
+
+    paramValues
   }
-
 }

@@ -1,7 +1,7 @@
 import java.io.PrintWriter
 
 import fpgrowth.{FPGrowth => FPGrowthLocal, Item}
-import helper.IOHelper
+import helper.{IOHelperFlink, IOHelper}
 import org.apache.flink.api.scala._
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.{SparkConf, SparkContext}
@@ -65,7 +65,7 @@ class TestPFPGrowth  {
 
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
+    val transactions = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val minCount = math.ceil(minSupport(testNum) * transactions.count()).toInt
 
     var allSetTransaction: ListBuffer[Set[String]] = ListBuffer()
@@ -127,12 +127,12 @@ class TestPFPGrowth  {
     //Employ flink and FPGrowth to read data
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(1)
-    val transactions = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
-    val minCount: Long = math.ceil(minSupport(testNum) * transactions.count()).toLong
+    val transactions = IOHelper.readInput(getInputFileName(testNum), itemDelimiter)
+    val minCount: Long = math.ceil(minSupport(testNum) * transactions.size).toLong
 
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions.collect().toList, minCount, sorting)
+    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, sorting)
 
     //Result result
     fpGrowthLocal.getFrequentItemsets()
@@ -140,7 +140,7 @@ class TestPFPGrowth  {
 
   /**
     * Compare two model
- *
+    *
     * @param thisModel One model to compare
     * @param thatModel The other model to compare
     */
@@ -189,7 +189,7 @@ class TestPFPGrowth  {
 
     val frequentSet = modelSpark.freqItemsets.collect()
 
-    println("SPARK FPGrowth: " + frequentSet.size)
+    println("SPARK FPGrowth: " + frequentSet.length)
     println("TEST: " + testNum + " - SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
     startTime = System.currentTimeMillis()
     sc.stop()
@@ -224,12 +224,11 @@ class TestPFPGrowth  {
   //@Test
   def testSpeedFlink(): Unit = {
     val testNum = 5
-    val inputFileName = getInputFileName(testNum)
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(numPartition)
 
-    var startTime = System.currentTimeMillis()
-    val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
+    val startTime = System.currentTimeMillis()
+    val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
     pfp.numPartition = numPartition
     val flinkModel = pfp.run(transactionsFlink)
@@ -241,12 +240,11 @@ class TestPFPGrowth  {
   //@Test
   def testSpeedFlink(testNum: Int) = {
     //val testNum = 3
-    val inputFileName = getInputFileName(testNum)
     val env = ExecutionEnvironment.getExecutionEnvironment
     env.setParallelism(numPartition)
 
     var startTime = System.currentTimeMillis()
-    val transactionsFlink = IOHelper.readInput(env, getInputFileName(testNum), itemDelimiter)
+    val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
     pfp.numPartition = numPartition
     val flinkModel = pfp.run(transactionsFlink)
@@ -272,8 +270,6 @@ class TestPFPGrowth  {
 
       //FLINK RUNNING
       val flinkModel = testSpeedFlink(testNum)
-
-      var localFPGrowthModel: ListBuffer[(ListBuffer[Item], Int)] = null
 
       //Extract frequentSet in Spark
       var frequentSetsSpark: ListBuffer[Set[String]] = new ListBuffer()
