@@ -21,8 +21,9 @@ object FlinkFPGrowth {
     //Parse input parameter
     val input = parameter.get("input")
     val minSupport = parameter.get("support")
+    val numGroup = parameter.get("group")
 
-    println("input: " + input + " support: " + minSupport)
+    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
@@ -32,6 +33,10 @@ object FlinkFPGrowth {
     val starTime = System.currentTimeMillis()
 
     val pfp = new PFPGrowth(env, minSupport.toDouble)
+
+    if (numGroup != null && numGroup.toInt >=0 ) {
+      pfp.numPartition = numGroup.toInt
+    }
 
     //Read dataset
     val data = IOHelperFlink.readInput(env, input, itemDelimiter)

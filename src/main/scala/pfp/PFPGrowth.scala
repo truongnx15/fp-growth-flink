@@ -26,7 +26,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     val minCount: Long = math.ceil(minSupport * data.count()).toLong
 
-    env.setParallelism(numPartition)
+    //env.setParallelism(numPartition)
 
    //STEP 2: parallel counting step
     val unsortedList = data
@@ -38,10 +38,13 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
     var FList = unsortedList.sortWith(_.frequency > _ .frequency)
 
+    println("FLINK ITEM: " + FList.size)
+
     //glist maps between item and its hashcode
     val gList = mutable.HashMap.empty[Item, Int]
 
     var partitionCount: Long = 0
+    println("FLINK NumGroup: " + numPartition)
     FList.foreach(
       x => {
         gList += (x -> (partitionCount % numPartition).toInt)

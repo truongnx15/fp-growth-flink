@@ -16,11 +16,17 @@ object SparkFPGrowth {
     //Parse input parameter
     val input = parameter.getOrElse("--input", null)
     val minSupport = parameter.getOrElse("--support", null)
+    val numGroup = parameter.getOrElse("--group", null)
 
-    println("input: " + input + " support: " + minSupport)
+    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
+      return
+    }
+
+    if (numGroup != null && numGroup.toInt <= 0) {
+      println("group parameter should be integer")
       return
     }
 
@@ -32,11 +38,14 @@ object SparkFPGrowth {
 
     //SPARK RUNNING
     val transactionsSpark = sc.textFile(input).map(_.split(itemDelimiter)).cache()
-    val modelSpark = new FPGrowth()
+    var modelSpark = new FPGrowth()
       .setMinSupport(minSupport.toDouble)
-      .run(transactionsSpark)
+    if (numGroup != null) {
+      modelSpark = modelSpark.setNumPartitions(numGroup.toInt)
+    }
+    val modelSparkResult = modelSpark.run(transactionsSpark)
 
-    val frequentSet = modelSpark.freqItemsets.collect()
+    val frequentSet = modelSparkResult.freqItemsets.collect()
 
     println("TIME SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
     println("SPARK FPGrowth: " + frequentSet.length)

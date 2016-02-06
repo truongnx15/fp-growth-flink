@@ -4,7 +4,7 @@ import scala.collection.mutable.HashMap
 
 object ParamHelper {
 
-  val requiredParams = List("--input" , "--support")
+  val params = List("--input" , "--support", "--group")
 
   def parseArguments(args: Array[String]): HashMap[String, String] = {
     val paramValues = HashMap[String, String]()
@@ -13,7 +13,7 @@ object ParamHelper {
     var index = 0
     while (index < args.length) {
       val argument = args(index).toLowerCase.trim
-      if (requiredParams.contains(argument)) {
+      if (params.contains(argument)) {
         val paramValue = args(index + 1).trim
         paramValues += (argument -> paramValue)
         index += 1
