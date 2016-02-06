@@ -10,6 +10,7 @@ import scala.collection.mutable.ListBuffer
 object IOHelperFlink {
   /**
     * Read transactions in text file for Flink
+    *
     * @param env The Flink runtime environment
     * @param input The path to input file
     * @param itemDelimiter The delimiter of items within one transaction

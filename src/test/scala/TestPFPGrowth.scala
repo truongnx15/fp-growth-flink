@@ -26,7 +26,7 @@ class TestPFPGrowth  {
 
   var outputWriter: PrintWriter = _
 
-  val numPartition: Int = 4
+  val numPartition: Int = 50
 
 
   def generateTransactionFile(testNum: Int): Unit = {
@@ -210,7 +210,7 @@ class TestPFPGrowth  {
     val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
     val modelSpark = new FPGrowth()
       .setMinSupport(minSupport(testNum))
-      .setNumPartitions(numPartition)
+      //.setNumPartitions(numPartition)
       .run(transactionsSpark)
 
     val frequentSet = modelSpark.freqItemsets.collect()
@@ -241,7 +241,7 @@ class TestPFPGrowth  {
   def testSpeedFlink(testNum: Int) = {
     //val testNum = 3
     val env = ExecutionEnvironment.getExecutionEnvironment
-    env.setParallelism(numPartition)
+    //env.setParallelism(numPartition)
 
     var startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)

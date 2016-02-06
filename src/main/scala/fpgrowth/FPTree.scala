@@ -1,8 +1,8 @@
 //package fpgrowth
 package fpgrowth
 
+
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
   * FPGrowth tree in memory
@@ -19,6 +19,7 @@ class FPTree(var minCount: Long) {
 
   /**
     * Add one transaction to the FPGrowth Tree
+    *
     * @param itemset a transaction to be added to current FPTree
     */
 

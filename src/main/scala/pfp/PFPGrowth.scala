@@ -1,13 +1,12 @@
 
 package pfp
 
+import fpgrowth.Item
 import org.apache.flink.api.scala.DataSet
 import org.apache.flink.api.scala.ExecutionEnvironment
 
 import org.apache.flink.api.scala._
-
-import fpgrowth.Item
-
+import org.apache.flink.core.fs.FileSystem.WriteMode
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -21,6 +20,7 @@ import scala.collection.mutable.ListBuffer
 class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
+  var output: String = null
 
   def run(data: DataSet[ListBuffer[Item]]) = {
 
@@ -65,24 +65,25 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     //do not need gList and FList any more
     gList.clear()
     FList = null
-
     //STEP 4: Parallel FPGrowth: default null key is not necessary
-    val frequentItemIdsets = data
-      .flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
+    val frequentItemsets = data
+      .map(x => x.flatMap(order.get))
+      .flatMap(new ParallelFPGrowth.ParallelFPGrowthExtract(idToGroupMap))
+      //.flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
+      //.flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(idToGroupMap, minCount))
       //Map back from itemId to real item
+      .map(new ParallelFPGrowth.ParallelFPGrowthIdToItem(idToItemMap))
 
 
-    var frequentItemsets = ListBuffer.empty[(ListBuffer[Item], Int)]
-
-    frequentItemIdsets.collect().foreach(
-      frequentIdSet => {
-        val itemset = frequentIdSet._1.flatMap(idToItemMap.get)
-        frequentItemsets += ((itemset, frequentIdSet._2))
-      }
-    )
-
-    frequentItemsets
+    if (output != null) {
+      frequentItemsets.writeAsCsv(output, "\n" , "\t", WriteMode.OVERWRITE)
+      //Dummpy return to compile
+      new ListBuffer[(ListBuffer[Item], Int)]
+    }
+    else {
+      frequentItemsets.collect()
+    }
   }
 }

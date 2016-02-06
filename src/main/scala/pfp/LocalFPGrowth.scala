@@ -1,6 +1,6 @@
 package pfp
 
-import fpgrowth.{FPGrowth => FPGrowthLocal}
+import fpgrowth.FPGrowth
 import helper.{IOHelper, ParamHelper}
 
 object LocalFPGrowth {
@@ -29,7 +29,7 @@ object LocalFPGrowth {
 
     //Init and run FPGrowth
     val sorting: Boolean = true
-    val fpGrowthLocal: FPGrowthLocal = new FPGrowthLocal(transactions, minCount, sorting)
+    val fpGrowthLocal: FPGrowth = new FPGrowth(transactions, minCount, sorting)
 
     //Result result
     val result = fpGrowthLocal.getFrequentItemsets()

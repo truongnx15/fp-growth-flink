@@ -4,7 +4,7 @@ import scala.collection.mutable.HashMap
 
 object ParamHelper {
 
-  val params = List("--input" , "--support", "--group")
+  val params = List("--input" , "--support", "--group" , "--output")
 
   def parseArguments(args: Array[String]): HashMap[String, String] = {
     val paramValues = HashMap[String, String]()

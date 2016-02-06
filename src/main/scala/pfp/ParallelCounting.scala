@@ -1,12 +1,12 @@
 package pfp
 
+import fpgrowth.Item
+
 import scala.collection.JavaConversions._
 
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.common.functions.GroupReduceFunction
 import org.apache.flink.util.Collector
-
-import fpgrowth.Item
 
 import scala.collection.mutable.ListBuffer
 

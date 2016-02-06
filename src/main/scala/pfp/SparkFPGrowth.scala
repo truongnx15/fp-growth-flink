@@ -17,8 +17,9 @@ object SparkFPGrowth {
     val input = parameter.getOrElse("--input", null)
     val minSupport = parameter.getOrElse("--support", null)
     val numGroup = parameter.getOrElse("--group", null)
+    val output = parameter.getOrElse("--output", null)
 
-    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup)
+    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup + " output: " + output)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
@@ -31,6 +32,8 @@ object SparkFPGrowth {
     }
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
+    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    //val conf = new SparkConf().setAppName("SPARK PFPGrowth").setMaster("local[*]")
     val conf = new SparkConf().setAppName("SPARK PFPGrowth")
     val sc = new SparkContext(conf)
 
@@ -43,12 +46,18 @@ object SparkFPGrowth {
     if (numGroup != null) {
       modelSpark = modelSpark.setNumPartitions(numGroup.toInt)
     }
+
     val modelSparkResult = modelSpark.run(transactionsSpark)
 
-    val frequentSet = modelSparkResult.freqItemsets.collect()
+    if (output != null) {
+      modelSparkResult.freqItemsets.saveAsTextFile(output)
+    }
+    else {
+      val frequentSet = modelSparkResult.freqItemsets.collect()
+      println("SPARK FPGrowth: " + frequentSet.length)
+    }
 
     println("TIME SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
-    println("SPARK FPGrowth: " + frequentSet.length)
     sc.stop()
   }
 }
