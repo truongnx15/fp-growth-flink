@@ -16,26 +16,6 @@ object ParallelFPGrowth {
     override def map(t: (ListBuffer[Int], Int)): (ListBuffer[Item], Int) = (t._1.flatMap(idToItemMap.get), t._2)
   }
 
-  class ParallelFPGrowthExtract(val idToGroupMap: mutable.HashMap[Int, Int]) extends FlatMapFunction[ListBuffer[Int], (Int, ListBuffer[Int])] {
-
-    override def flatMap(itemset: ListBuffer[Int], collector: Collector[(Int, ListBuffer[Int])]): Unit = {
-
-      //Check if the current group has been processed
-      var outputGroup = Set[Int]()
-      //Extract itemId from itemset and sort frequency in increasing order
-      val itemIds = itemset.sortWith( _ > _)
-
-      for(j <- (itemIds.size - 1) to (0, -1)) {
-        val itemId = itemIds(j)
-        val groupId = idToGroupMap(itemId)
-
-        if (!outputGroup.contains(groupId)) {
-          outputGroup += groupId
-          collector.collect(groupId, itemIds.slice(0, j + 1))
-        }
-      }
-    }
-  }
 
   /**
     * Mapper in step4. The idea is to generate independent conditional based itemset. Each itemset has its own order based on frequency
@@ -44,16 +24,16 @@ object ParallelFPGrowth {
     *
     * => Sorting by frequency is sorting itemset itemId
     * @param idToGroupMap The map from id of item to item's group
-    * @param order The map from Item to its order(id)
     */
-  class ParallelFPGrowthFlatMap(val idToGroupMap: mutable.HashMap[Int, Int], val order: Map[Item, Int]) extends FlatMapFunction[ListBuffer[Item], (Int, ListBuffer[Int])] {
 
-    override def flatMap(itemset: ListBuffer[Item], collector: Collector[(Int, ListBuffer[Int])]): Unit = {
+  class ParallelFPGrowthExtract(val idToGroupMap: mutable.HashMap[Int, Int]) extends FlatMapFunction[ListBuffer[Int], (Int, ListBuffer[Int])] {
+
+    override def flatMap(itemset: ListBuffer[Int], collector: Collector[(Int, ListBuffer[Int])]): Unit = {
 
       //Check if the current group has been processed
       var outputGroup = Set[Int]()
       //Extract itemId from itemset and sort frequency in increasing order
-      val itemIds = itemset.flatMap(order.get).sortWith( _ > _)
+      val itemIds = itemset.sortWith( _ > _)
 
       for(j <- (itemIds.size - 1) to (0, -1)) {
         val itemId = itemIds(j)

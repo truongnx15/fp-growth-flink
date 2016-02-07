@@ -17,9 +17,8 @@ object SparkFPGrowth {
     val input = parameter.getOrElse("--input", null)
     val minSupport = parameter.getOrElse("--support", null)
     val numGroup = parameter.getOrElse("--group", null)
-    val output = parameter.getOrElse("--output", null)
 
-    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup + " output: " + output)
+    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
@@ -49,14 +48,7 @@ object SparkFPGrowth {
 
     val modelSparkResult = modelSpark.run(transactionsSpark)
 
-    if (output != null) {
-      modelSparkResult.freqItemsets.saveAsTextFile(output)
-    }
-    else {
-      val frequentSet = modelSparkResult.freqItemsets.collect()
-      println("SPARK FPGrowth: " + frequentSet.length)
-    }
-
+    println("SPARK FPGrowth: " + modelSparkResult.freqItemsets.count())
     println("TIME SPARK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
     sc.stop()
   }

@@ -2,6 +2,7 @@
 package pfp
 
 import fpgrowth.Item
+import org.apache.flink.api.java.operators.DataSink
 import org.apache.flink.api.scala.DataSet
 import org.apache.flink.api.scala.ExecutionEnvironment
 
@@ -20,7 +21,6 @@ import scala.collection.mutable.ListBuffer
 class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
 
   var numPartition = env.getParallelism
-  var output: String = null
 
   def run(data: DataSet[ListBuffer[Item]]) = {
 
@@ -76,14 +76,6 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
       //Map back from itemId to real item
       .map(new ParallelFPGrowth.ParallelFPGrowthIdToItem(idToItemMap))
 
-
-    if (output != null) {
-      frequentItemsets.writeAsCsv(output, "\n" , "\t", WriteMode.OVERWRITE)
-      //Dummpy return to compile
-      new ListBuffer[(ListBuffer[Item], Int)]
-    }
-    else {
-      frequentItemsets.collect()
-    }
+    frequentItemsets
   }
 }

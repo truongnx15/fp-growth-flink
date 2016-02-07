@@ -107,18 +107,18 @@ class FPGrowth(var itemsets: List[ListBuffer[Item]], var minCount: Long, var sor
     //Adjust frequent of item in conditional pattern to be as the same as item
     val headerTableItem = fptree.headerTable(itemId)
 
-    var itemset = ListBuffer.empty[Int]
+    //var itemset = ListBuffer.empty[Int]
 
     headerTableItem.nodes.foreach(
       currentNode => {
         var pathNode = currentNode.parent
 
-        //var itemset = List.empty[Int]
-        itemset.clear()
+        var itemset = List.empty[Int]
+        //itemset.clear()
 
         while (!pathNode.isRoot) {
-          //itemset = pathNode.itemId :: itemset
-          itemset.prepend(pathNode.itemId)
+          itemset = pathNode.itemId :: itemset
+          //itemset.prepend(pathNode.itemId)
           pathNode = pathNode.parent
         }
 

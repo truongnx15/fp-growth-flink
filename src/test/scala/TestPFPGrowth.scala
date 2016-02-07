@@ -15,7 +15,7 @@ import scala.util.Random
 class TestPFPGrowth  {
 
   val minSupport = List[Double](0.1, 0.2, 0.3, 0.2, 0.25, 0.15, 0.2, 0.15, 0.15)
-  val numItems = List[Int](10, 15, 20, 50, 70, 100, 150, 150, 200)
+  val numItems = List[Int](10, 15, 20, 50, 75, 110, 150, 150, 200)
   val numTransactions = List[Int](15, 50, 100, 150, 1000, 2000, 3000, 5000, 10000)
 
   val maxBruteForceItems = 20
@@ -199,7 +199,7 @@ class TestPFPGrowth  {
   def testSpeedSpark(testNum: Int) = {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
     val sc = new SparkContext(conf)
@@ -231,7 +231,7 @@ class TestPFPGrowth  {
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
     pfp.numPartition = numPartition
-    val flinkModel = pfp.run(transactionsFlink)
+    val flinkModel = pfp.run(transactionsFlink).collect()
 
     println("FLINK PFPGrowth: " + flinkModel.size)
     println("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
@@ -247,7 +247,7 @@ class TestPFPGrowth  {
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
     pfp.numPartition = numPartition
-    val flinkModel = pfp.run(transactionsFlink)
+    val flinkModel = pfp.run(transactionsFlink).collect()
 
     outputWriter.write("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
 

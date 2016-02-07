@@ -7,6 +7,8 @@ import helper.IOHelperFlink
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala.ExecutionEnvironment
 
+import scala.collection.mutable.ListBuffer
+
 object FlinkFPGrowth {
 
   def main(args: Array[String]) {
@@ -22,9 +24,8 @@ object FlinkFPGrowth {
     val input = parameter.get("input")
     val minSupport = parameter.get("support")
     val numGroup = parameter.get("group")
-    val output = parameter.get("output")
 
-    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup + " output: " + output)
+    println("input: " + input + " support: " + minSupport + " numGroup: " + numGroup)
 
     if (input == null || input == "" || minSupport == null) {
       println("Please indicate input file and support: --input inputFile --support minSupport")
@@ -39,18 +40,12 @@ object FlinkFPGrowth {
       pfp.numPartition = numGroup.toInt
     }
 
-    if (output != null) {
-      pfp.output = output
-    }
-
     //Read dataset
     val data = IOHelperFlink.readInput(env, input, itemDelimiter)
     //Run the PFPGrowth and get list of frequent itemsets
     val frequentItemsets = pfp.run(data)
 
-    env.execute("FLINK FPGROWTH")
-
+    println("FLINK FPGROWTH: " + frequentItemsets.count())
     println("TIME: " + (System.currentTimeMillis() - starTime) / 1000.0)
-    println("FLINK FPGROWTH: " + frequentItemsets.size)
   }
 }
