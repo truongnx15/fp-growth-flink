@@ -16,17 +16,17 @@ class TestPFPGrowth  {
 
   val minSupport = List[Double](0.1, 0.2, 0.3, 0.2, 0.25, 0.15, 0.2, 0.15, 0.15)
   val numItems = List[Int](10, 15, 20, 50, 75, 110, 150, 150, 200)
-  val numTransactions = List[Int](15, 50, 100, 150, 1000, 2000, 3000, 5000, 10000)
+  val numTransactions = List[Int](15, 50, 100, 150, 1000, 2000, 3000, 5000, 20000)
 
   val maxBruteForceItems = 20
-  val maxLocalFPGrowthTransactions = 5000
+  val maxLocalFPGrowthTransactions = 100000
 
   val itemDelimiter = " "
   val inputFolder = "testdata"
 
   var outputWriter: PrintWriter = _
 
-  val numPartition: Int = 50
+  val numPartition: Int = 200
 
 
   def generateTransactionFile(testNum: Int): Unit = {
@@ -184,7 +184,7 @@ class TestPFPGrowth  {
     val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
     val modelSpark = new FPGrowth()
       .setMinSupport(minSupport(testNum))
-      .setNumPartitions(numPartition)
+      //.setNumPartitions(numPartition)
       .run(transactionsSpark)
 
     val frequentSet = modelSpark.freqItemsets.collect()
@@ -199,7 +199,7 @@ class TestPFPGrowth  {
   def testSpeedSpark(testNum: Int) = {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
-    System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
+    //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
     val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
     val sc = new SparkContext(conf)
@@ -225,7 +225,7 @@ class TestPFPGrowth  {
   def testSpeedFlink(): Unit = {
     val testNum = 5
     val env = ExecutionEnvironment.getExecutionEnvironment
-    env.setParallelism(numPartition)
+    //env.setParallelism(numPartition)
 
     val startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
