@@ -69,8 +69,6 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     val frequentItemsets = data
       .map(x => x.flatMap(order.get))
       .flatMap(new ParallelFPGrowth.ParallelFPGrowthExtract(idToGroupMap))
-      //.flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
-      //.flatMap(new ParallelFPGrowth.ParallelFPGrowthFlatMap(idToGroupMap, order))
       .groupBy(0)
       .reduceGroup(new ParallelFPGrowth.ParallelFPGrowthGroupReduce(idToGroupMap, minCount))
       //Map back from itemId to real item

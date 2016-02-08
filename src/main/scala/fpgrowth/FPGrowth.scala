@@ -113,18 +113,20 @@ class FPGrowth(var itemsets: List[ListBuffer[Item]], var minCount: Long, var sor
       currentNode => {
         var pathNode = currentNode.parent
 
-        var itemset = List.empty[Int]
+        //var itemset = List.empty[Int]
         //itemset.clear()
+        tmpFPGrowth.fptree.startSingleItemInsertion
 
         while (!pathNode.isRoot) {
-          itemset = pathNode.itemId :: itemset
+          //itemset = pathNode.itemId :: itemset
           //itemset.prepend(pathNode.itemId)
+          tmpFPGrowth.fptree.addSingleItem(pathNode.itemId, currentNode.frequency)
           pathNode = pathNode.parent
         }
 
-        if (itemset.nonEmpty) {
-          tmpFPGrowth.fptree.addTransaction(itemset, currentNode.frequency)
-        }
+        //if (itemset.nonEmpty) {
+          //tmpFPGrowth.fptree.addTransaction(itemset, currentNode.frequency)
+        //}
       }
     )
 

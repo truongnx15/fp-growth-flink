@@ -17,6 +17,8 @@ class FPTree(var minCount: Long) {
 
   var hasSinglePath = true
 
+  var currentNodeSingleItemInsert: FPTreeNode = null
+
   /**
     * Add one transaction to the FPGrowth Tree
     *
@@ -52,6 +54,36 @@ class FPTree(var minCount: Long) {
         headerTableItem.count += itemsetFrequency
       }
     }
+  }
+
+  def startSingleItemInsertion: Unit = {
+    currentNodeSingleItemInsert = root
+  }
+
+  def addSingleItem(itemId: Int, itemFrequency: Int): Unit = {
+    val headerTableItem = headerTable.getOrElseUpdate(itemId, new FPHeaderItem)
+    val child = currentNodeSingleItemInsert.children.getOrElse(itemId, null)
+    if (child == null || !itemId.equals(child.itemId)) {
+      //We should create new child be cause there is no
+
+      val newNode = new FPTreeNode(itemId, itemFrequency, currentNodeSingleItemInsert )
+      //Add to the children of currentNode
+      currentNodeSingleItemInsert.children += (itemId -> newNode)
+      if (currentNodeSingleItemInsert.children.size > 1) {
+        hasSinglePath = false
+      }
+
+      headerTableItem.nodes += newNode
+      //Update current node to new node
+      currentNodeSingleItemInsert = newNode
+    }
+    else {
+      //We should go down to the next node because we have common path
+      currentNodeSingleItemInsert = child
+      currentNodeSingleItemInsert.frequency += itemFrequency
+    }
+
+    headerTableItem.count += itemFrequency
   }
 
   /**
