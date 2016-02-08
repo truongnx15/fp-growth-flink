@@ -32,7 +32,7 @@ object SparkFPGrowth {
 
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
-    //val conf = new SparkConf().setAppName("SPARK PFPGrowth").setMaster("local[*]")
+    //val conf = new SparkConf().setAppName("SPARK PFPGrowth").setMaster("local[2]")
     val conf = new SparkConf().setAppName("SPARK PFPGrowth")
     val sc = new SparkContext(conf)
 

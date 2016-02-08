@@ -14,9 +14,9 @@ import scala.util.Random
 
 class TestPFPGrowth  {
 
-  val minSupport = List[Double](0.1, 0.2, 0.3, 0.2, 0.25, 0.15, 0.2, 0.15, 0.15)
-  val numItems = List[Int](10, 15, 20, 50, 75, 110, 150, 150, 200)
-  val numTransactions = List[Int](15, 50, 100, 150, 1000, 2000, 3000, 5000, 20000)
+  val minSupport = List[Double](0.1, 0.2, 0.3, 0.2, 0.25, 0.15, 0.15, 0.15)
+  val numItems = List[Int](10, 15, 20, 50, 75, 110, 150, 150)
+  val numTransactions = List[Int](15, 50, 100, 150, 1000, 2000, 3000, 5000)
 
   val maxBruteForceItems = 20
   val maxLocalFPGrowthTransactions = 100000
@@ -186,7 +186,7 @@ class TestPFPGrowth  {
     val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
     val modelSpark = new FPGrowth()
       .setMinSupport(minSupport(testNum))
-      //.setNumPartitions(numPartition)
+      .setNumPartitions(numParallism)
       .run(transactionsSpark)
 
     val frequentSet = modelSpark.freqItemsets.collect()
@@ -212,7 +212,7 @@ class TestPFPGrowth  {
     val transactionsSpark = sc.textFile(getInputFileName(testNum)).map(_.split(" ")).cache()
     val modelSpark = new FPGrowth()
       .setMinSupport(minSupport(testNum))
-      //.setNumPartitions(numPartition)
+      .setNumPartitions(numParallism)
       .run(transactionsSpark)
 
     val frequentSet = modelSpark.freqItemsets.collect()
