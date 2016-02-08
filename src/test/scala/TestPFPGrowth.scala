@@ -26,7 +26,9 @@ class TestPFPGrowth  {
 
   var outputWriter: PrintWriter = _
 
-  val numPartition: Int = 200
+  val numGroup: Int = 200
+
+  val numParallism = 4
 
 
   def generateTransactionFile(testNum: Int): Unit = {
@@ -175,7 +177,7 @@ class TestPFPGrowth  {
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     val testNum = 5
-    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
+    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[" + numParallism + "]")
     val sc = new SparkContext(conf)
 
     var startTime: Long = System.currentTimeMillis()
@@ -201,7 +203,7 @@ class TestPFPGrowth  {
     //This is a workout on windows to run spark locally. Set the hadoop.home.dir to your home hadoop folder
     //System.setProperty("hadoop.home.dir", "D:\\hadoop\\hadoop-common")
     //val testNum = 3
-    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[*]")
+    val conf = new SparkConf().setAppName("PFPGrowth").setMaster("local[" + numParallism + "]")
     val sc = new SparkContext(conf)
 
     var startTime: Long = System.currentTimeMillis()
@@ -225,12 +227,12 @@ class TestPFPGrowth  {
   def testSpeedFlink(): Unit = {
     val testNum = 5
     val env = ExecutionEnvironment.getExecutionEnvironment
-    //env.setParallelism(numPartition)
+    env.setParallelism(numParallism)
 
     val startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
-    pfp.numPartition = numPartition
+    pfp.numPartition = numGroup
     val flinkModel = pfp.run(transactionsFlink).collect()
 
     println("FLINK PFPGrowth: " + flinkModel.size)
@@ -241,12 +243,12 @@ class TestPFPGrowth  {
   def testSpeedFlink(testNum: Int) = {
     //val testNum = 3
     val env = ExecutionEnvironment.getExecutionEnvironment
-    //env.setParallelism(numPartition)
+    env.setParallelism(numParallism)
 
     var startTime = System.currentTimeMillis()
     val transactionsFlink = IOHelperFlink.readInput(env, getInputFileName(testNum), itemDelimiter)
     val pfp = new PFPGrowth(env, minSupport(testNum))
-    pfp.numPartition = numPartition
+    pfp.numPartition = numGroup
     val flinkModel = pfp.run(transactionsFlink).collect()
 
     outputWriter.write("TEST: " + testNum + " - FLINK: " + (System.currentTimeMillis() - startTime)/1000.0 + "\n")
@@ -255,7 +257,7 @@ class TestPFPGrowth  {
   }
 
   @Test
-  def testWithSpark(): Unit = {
+  def testCorrectness(): Unit = {
 
     for(testNum: Int <- minSupport.indices) {
 
