@@ -25,8 +25,8 @@ object SparkFPGrowth {
       return
     }
 
-    if (numGroup != null && numGroup.toInt <= 0) {
-      println("group parameter should be integer")
+    if (numGroup == null || numGroup.toInt <= 0) {
+      println("group parameter must be set equal to parallelism level")
       return
     }
 
