@@ -6,6 +6,10 @@ import fpgrowth.Item
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
+/**
+  * This is a helper to read transaction from input file
+  */
+
 object IOHelper {
   /**
     * Read transactions in text file

@@ -2,6 +2,10 @@ package helper
 
 import scala.collection.mutable.HashMap
 
+/**
+  * Helper to parse parameters
+  */
+
 object ParamHelper {
 
   val params = List("--input" , "--support", "--group")

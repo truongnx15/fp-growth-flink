@@ -3,6 +3,10 @@ package pfp
 import fpgrowth.FPGrowth
 import helper.{IOHelper, ParamHelper}
 
+/**
+  * Class as example to run local FPGrowth
+  */
+
 object LocalFPGrowth {
   def main(args: Array[String]): Unit = {
 

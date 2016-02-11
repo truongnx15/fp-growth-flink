@@ -7,6 +7,10 @@ import org.apache.flink.util.Collector
 
 import scala.collection.mutable.ListBuffer
 
+/**
+  * This is a helper to read transaction from input file for flink
+  */
+
 object IOHelperFlink {
   /**
     * Read transactions in text file for Flink

@@ -12,6 +12,10 @@ import scala.collection.mutable.ListBuffer
 
 object ParallelFPGrowth {
 
+  /**
+    * Map back from itemId to Item and get the final result
+    * @param idToItemMap The map from ItemId => Item
+    */
   class ParallelFPGrowthIdToItem( val idToItemMap: Map[Int, Item]) extends MapFunction[(ListBuffer[Int], Int), (ListBuffer[Item], Int)] {
     override def map(t: (ListBuffer[Int], Int)): (ListBuffer[Item], Int) = (t._1.flatMap(idToItemMap.get), t._2)
   }
@@ -35,6 +39,7 @@ object ParallelFPGrowth {
       //Extract itemId from itemset and sort frequency in increasing order
       val itemIds = itemset.sortWith( _ > _)
 
+      //Extract conditional transactions similar to Step4 in the paper
       for(j <- (itemIds.size - 1) to (0, -1)) {
         val itemId = itemIds(j)
         val groupId = idToGroupMap(itemId)
@@ -47,11 +52,19 @@ object ParallelFPGrowth {
     }
   }
 
+  /**
+    * Group Reduce as in Step4 of the paper. Each group reduce function receive a group of transactions, build the local FP-Tree and mine
+    * frequent itemsets.
+    *
+    * @param idToGroupMap
+    * @param minCount
+    */
   class ParallelFPGrowthGroupReduce(val idToGroupMap: mutable.HashMap[Int, Int], val minCount: Long) extends GroupReduceFunction[(Int, ListBuffer[Int]), (ListBuffer[Int], Int)] {
     override def reduce(iterable: Iterable[(Int, ListBuffer[Int])], collector: Collector[(ListBuffer[Int], Int)]): Unit = {
       var groupId: Long = 0
       val fpGrowthLocal: FPGrowth = new FPGrowth(null, minCount, false)
 
+      //Build local FP-Tree
       iterable.foreach(
         tuple => {
           groupId = tuple._1
@@ -59,11 +72,12 @@ object ParallelFPGrowth {
         }
       )
 
-      //Extract now group
+      //Extract items in this group
       val nowGroup = {
         idToGroupMap.filter(_._2 == groupId).keys
       }
 
+      //Mine frequent patterns only for items in group
       nowGroup.foreach(
         item => {
           //Extract the frequentId itemset
