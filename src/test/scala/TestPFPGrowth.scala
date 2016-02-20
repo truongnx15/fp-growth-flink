@@ -334,7 +334,7 @@ class TestPFPGrowth  {
         compareModel((frequentSetsLocalFPGrowth, "LocalFPGrowth") , (frequentSetsFlink, "FLINK"))
       }
 
-      compareModel((frequentSetsFlink, "frequentSetsFlink") , (frequentSetsFlink, "SPARK"))
+      compareModel((frequentSetsFlink, "FLINK") , (frequentSetsSpark, "SPARK"))
 
       outputWriter.close()
     }

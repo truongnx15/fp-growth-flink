@@ -2,12 +2,10 @@
 package pfp
 
 import fpgrowth.Item
-import org.apache.flink.api.java.operators.DataSink
 import org.apache.flink.api.scala.DataSet
 import org.apache.flink.api.scala.ExecutionEnvironment
 
 import org.apache.flink.api.scala._
-import org.apache.flink.core.fs.FileSystem.WriteMode
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -44,7 +42,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     println("FLINK NumGroup: " + numGroup)
 
     //glist maps between item and its hashcode
-    val gList = mutable.HashMap.empty[Item, Int]
+    var gList = mutable.HashMap.empty[Item, Int]
 
     //Divide items into groups
     var partitionCount: Long = 0
@@ -70,7 +68,7 @@ class PFPGrowth(env: ExecutionEnvironment, var minSupport: Double)  {
     )
 
     //do not need gList and FList any more
-    gList.clear()
+    gList = null
     FList = null
 
     //STEP 4: Parallel FPGrowth: default null key is not necessary

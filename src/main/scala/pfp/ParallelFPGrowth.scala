@@ -69,6 +69,7 @@ object ParallelFPGrowth {
         tuple => {
           groupId = tuple._1
           fpGrowthLocal.fptree.addTransaction(tuple._2, 1)
+          tuple._2.clear()
         }
       )
 

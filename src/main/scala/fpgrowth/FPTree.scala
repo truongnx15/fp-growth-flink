@@ -3,7 +3,7 @@ package fpgrowth
 import scala.collection.mutable
 
 /**
-  * Local FP-Tree: minCount is the
+  * Local FP-Tree
   */
 
 class FPTree {

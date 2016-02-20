@@ -1,0 +1,2 @@
+min support: 0.2
+number of frequent itemsets: 235
